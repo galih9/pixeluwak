@@ -743,7 +743,7 @@ export function maskBounds(
 	return { x: left, y: top, width: right - left + 1, height: bottom - top + 1 };
 }
 
-/** Captures a custom brush mask from non-transparent pixels inside `selection`. */
+/** Captures a custom brush mask and colors from non-transparent pixels inside `selection`. */
 export function captureBrushFromSelection(
 	pixels: PixelBuffer,
 	selection: SelectionMask | null,
@@ -757,13 +757,19 @@ export function captureBrushFromSelection(
 	const bw = Math.min(maxSize, bounds.width);
 	const bh = Math.min(maxSize, bounds.height);
 	const mask = new Uint8Array(bw * bh);
+	const colors = new Uint32Array(bw * bh);
 	let hasAny = false;
+	let hasColors = false;
 	for (let y = 0; y < bh; y++) {
 		for (let x = 0; x < bw; x++) {
 			const index = (bounds.y + y) * width + (bounds.x + x);
-			if (area[index] === 1 && packedAlpha(pixels[index] ?? 0) > 0) {
-				mask[y * bw + x] = 1;
+			const packed = pixels[index] ?? TRANSPARENT;
+			if (area[index] === 1 && packedAlpha(packed) > 0) {
+				const targetIndex = y * bw + x;
+				mask[targetIndex] = 1;
+				colors[targetIndex] = packed;
 				hasAny = true;
+				hasColors = true;
 			}
 		}
 	}
@@ -779,7 +785,14 @@ export function captureBrushFromSelection(
 			}
 		}
 	}
-	return hasAny ? { width: bw, height: bh, mask } : null;
+	return hasAny
+		? {
+				width: bw,
+				height: bh,
+				mask,
+				...(hasColors ? { colors } : {}),
+			}
+		: null;
 }
 
 export function shiftMask(

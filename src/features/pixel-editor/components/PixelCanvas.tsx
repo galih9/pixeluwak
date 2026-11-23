@@ -18,6 +18,7 @@ import {
 	TRANSPARENT,
 } from "../lib/color";
 import { onionSkinPixels } from "../lib/animation";
+import { stampCustomBrush } from "../lib/brushPresets";
 import { createBlurSampler } from "../lib/filters";
 import { publishFrame } from "../lib/liveView";
 import {
@@ -42,6 +43,16 @@ import {
 import { compositeLayers } from "../lib/layers";
 import { renderText } from "../lib/text";
 import {
+	computeFisheyeArcs,
+	fillGradient,
+	gridCellBounds,
+	intersectMaskWithRect,
+	pickLayerAtPoint,
+	resolvePerspectivePoints,
+	snapPointToGrid,
+	stampSpray,
+} from "../lib/tools";
+import {
 	compositeView,
 	type EditorState,
 	useEditorStore,
@@ -51,10 +62,13 @@ import {
 import type {
 	BrushShape,
 	CustomBrush,
+	CustomBrushOptions,
 	DitherPattern,
+	GradientOptions,
 	PixelBuffer,
 	Point,
 	SelectionMode,
+	SprayOptions,
 } from "../types";
 
 type ShapeTool = "line" | "rectangle" | "ellipse";
@@ -71,6 +85,37 @@ type Interaction =
 			shape: BrushShape;
 			customBrush: CustomBrush;
 			pixelPerfect: boolean;
+	  }
+	| {
+			kind: "custom-brush";
+			color: number;
+			target: PaintTarget;
+			last: Point;
+			lastStamped: Point;
+			brush: CustomBrush;
+			options: CustomBrushOptions;
+	  }
+	| {
+			kind: "spray";
+			color: number;
+			target: PaintTarget;
+			current: Point;
+			options: SprayOptions;
+			timerId: number;
+	  }
+	| {
+			kind: "gradient";
+			base: PixelBuffer;
+			target: PaintTarget;
+			start: Point;
+			seed: Point;
+			primaryHex: string;
+			secondaryHex: string;
+			options: GradientOptions;
+	  }
+	| {
+			kind: "perspective-handle";
+			handle: "point1" | "point2" | "point3" | "horizon";
 	  }
 	| {
 			kind: "dither";
@@ -146,6 +191,7 @@ type Interaction =
 type Preview =
 	| { kind: "rect"; x: number; y: number; width: number; height: number }
 	| { kind: "lasso"; points: Array<number> }
+	| { kind: "gradient"; start: Point; end: Point }
 	| null;
 
 const getState = (): EditorState => useEditorStore.getState();
@@ -387,6 +433,7 @@ export const PixelCanvas = (): FunctionComponent => {
 	const [preview, setPreview] = useState<Preview>(null);
 	const [spaceHeld, setSpaceHeld] = useState(false);
 	const [isPanning, setIsPanning] = useState(false);
+	const [hoveringVpHandle, setHoveringVpHandle] = useState(false);
 
 	const width = useEditorStore((state) => state.width);
 	const height = useEditorStore((state) => state.height);
@@ -405,7 +452,10 @@ export const PixelCanvas = (): FunctionComponent => {
 	const symmetryY = useEditorStore((state) => state.symmetryY);
 	const symmetryXPos = useEditorStore((state) => state.symmetryXPos);
 	const symmetryYPos = useEditorStore((state) => state.symmetryYPos);
-	const symmetryDiagonal = useEditorStore((state) => state.symmetryDiagonal);
+	const rulerGrid = useEditorStore((state) => state.rulerGrid);
+	const perspectiveGuide = useEditorStore((state) => state.perspectiveGuide);
+	const tiledPreview = useEditorStore((state) => state.tiledPreview);
+	const sprayOptions = useEditorStore((state) => state.sprayOptions);
 	const textDraft = useEditorStore((state) => state.textDraft);
 	const textValue = useEditorStore((state) => state.textValue);
 	const textStyle = useEditorStore((state) => state.textStyle);
@@ -702,23 +752,73 @@ export const PixelCanvas = (): FunctionComponent => {
 			else state.setSecondaryColor(hex);
 		};
 
-		const makeTarget = (state: EditorState): PaintTarget => ({
-			data: state.pixels.slice(),
-			width: state.width,
-			height: state.height,
-			mask: state.selection,
-			symmetryX: state.symmetryX,
-			symmetryY: state.symmetryY,
-			symmetryXPos: state.symmetryXPos,
-			symmetryYPos: state.symmetryYPos,
-			symmetryDiagonal: state.symmetryDiagonal,
-		});
+		const makeTarget = (
+			state: EditorState,
+			seedPixel?: Point
+		): PaintTarget => {
+			let mask = state.selection;
+			if (state.rulerGrid.enabled && state.rulerGrid.limitToCell && seedPixel) {
+				const cellBounds = gridCellBounds(
+					seedPixel,
+					state.rulerGrid,
+					state.width,
+					state.height
+				);
+				mask = intersectMaskWithRect(
+					state.selection,
+					cellBounds,
+					state.width,
+					state.height
+				);
+			}
+			return {
+				data: state.pixels.slice(),
+				width: state.width,
+				height: state.height,
+				mask,
+				symmetryX: state.symmetryX,
+				symmetryY: state.symmetryY,
+				symmetryXPos: state.symmetryXPos,
+				symmetryYPos: state.symmetryYPos,
+			};
+		};
+
+		const snapPixelIfEnabled = (state: EditorState, rawPixel: Point): Point =>
+			state.rulerGrid.enabled && state.rulerGrid.snapToGrid
+				? snapPointToGrid(rawPixel, state.rulerGrid, state.width, state.height)
+				: rawPixel;
+
+		const hitPerspectiveHandle = (
+			state: EditorState,
+			documentPoint: Point
+		): "point1" | "point2" | "point3" | "horizon" | null => {
+			const guide = state.perspectiveGuide;
+			if (!guide.enabled || guide.lockHandles) return null;
+			const resolved = resolvePerspectivePoints(
+				guide,
+				state.width,
+				state.height
+			);
+			const threshold = 10 / Math.max(1, state.zoom);
+			const check = (target: Point): boolean =>
+				Math.hypot(documentPoint.x - target.x, documentPoint.y - target.y) <=
+				threshold;
+
+			if (guide.mode === "fisheye") {
+				return check(resolved.center) ? "point1" : null;
+			}
+			if (check(resolved.point1)) return "point1";
+			if (guide.mode !== "1-point" && check(resolved.point2)) return "point2";
+			if (guide.mode === "3-point" && check(resolved.point3)) return "point3";
+			return null;
+		};
 
 		const onPointerDown = (event: PointerEvent): void => {
 			if (interaction) return;
 			const startState = getState();
 			const point = toDocument(event);
-			const pixel = toPixel(point);
+			const rawPixel = toPixel(point);
+			const pixel = snapPixelIfEnabled(startState, rawPixel);
 
 			const wantsPan =
 				event.button === 1 ||
@@ -738,6 +838,17 @@ export const PixelCanvas = (): FunctionComponent => {
 				return;
 			}
 			if (event.button !== 0 && event.button !== 2) return;
+
+			if (event.button === 0) {
+				const handle = hitPerspectiveHandle(startState, point);
+				if (handle) {
+					event.preventDefault();
+					container.setPointerCapture(event.pointerId);
+					interaction = { kind: "perspective-handle", handle };
+					return;
+				}
+			}
+
 			// Drawing on a playing animation would land on a random frame.
 			if (startState.playing) startState.setPlaying(false);
 			container.setPointerCapture(event.pointerId);
@@ -750,7 +861,10 @@ export const PixelCanvas = (): FunctionComponent => {
 			const state = getState();
 			const activeLayerObject = state.layers[state.activeLayer];
 			const colorHex = primary ? state.primaryColor : state.secondaryColor;
-			const drawsPixels = PAINT_TOOLS.has(activeTool) || activeTool === "fill";
+			const drawsPixels =
+				PAINT_TOOLS.has(activeTool) ||
+				activeTool === "fill" ||
+				activeTool === "gradient";
 			const mutatesActiveLayer =
 				drawsPixels ||
 				activeTool === "text" ||
@@ -785,15 +899,15 @@ export const PixelCanvas = (): FunctionComponent => {
 			}
 
 			const inside =
-				pixel.x >= 0 &&
-				pixel.y >= 0 &&
-				pixel.x < state.width &&
-				pixel.y < state.height;
+				rawPixel.x >= 0 &&
+				rawPixel.y >= 0 &&
+				rawPixel.x < state.width &&
+				rawPixel.y < state.height;
 			if (
 				drawsPixels &&
 				inside &&
 				state.selection &&
-				state.selection[pixel.y * state.width + pixel.x] !== 1
+				state.selection[rawPixel.y * state.width + rawPixel.x] !== 1
 			) {
 				state.showNotice(
 					"Drawing is limited to the selection · press Esc to deselect"
@@ -810,7 +924,7 @@ export const PixelCanvas = (): FunctionComponent => {
 			switch (activeTool) {
 				case "pencil":
 				case "eraser": {
-					const target = makeTarget(state);
+					const target = makeTarget(state, rawPixel);
 					const paint: Extract<Interaction, { kind: "paint" }> = {
 						kind: "paint",
 						color,
@@ -839,8 +953,86 @@ export const PixelCanvas = (): FunctionComponent => {
 					liveDraw(target.data);
 					break;
 				}
+				case "custom-brush": {
+					const target = makeTarget(state, rawPixel);
+					const customInteraction: Extract<
+						Interaction,
+						{ kind: "custom-brush" }
+					> = {
+						kind: "custom-brush",
+						color,
+						target,
+						last: pixel,
+						lastStamped: pixel,
+						brush: state.customBrush,
+						options: state.customBrushOptions,
+					};
+					if (event.shiftKey && lastPaintPoint) {
+						let lastDone = lastPaintPoint;
+						for (const linePoint of linePoints(
+							lastPaintPoint.x,
+							lastPaintPoint.y,
+							pixel.x,
+							pixel.y
+						)) {
+							if (
+								Math.hypot(linePoint.x - lastDone.x, linePoint.y - lastDone.y) >=
+								customInteraction.options.spacing
+							) {
+								stampCustomBrush(
+									target,
+									linePoint.x,
+									linePoint.y,
+									customInteraction.brush,
+									color,
+									customInteraction.options
+								);
+								lastDone = linePoint;
+							}
+						}
+						customInteraction.lastStamped = lastDone;
+					} else {
+						stampCustomBrush(
+							target,
+							pixel.x,
+							pixel.y,
+							customInteraction.brush,
+							color,
+							customInteraction.options
+						);
+					}
+					interaction = customInteraction;
+					liveDraw(target.data);
+					break;
+				}
+				case "spray": {
+					const target = makeTarget(state, rawPixel);
+					const sprayOptions = state.sprayOptions;
+					stampSpray(target, pixel.x, pixel.y, color, sprayOptions);
+					const sprayInteraction: Extract<Interaction, { kind: "spray" }> = {
+						kind: "spray",
+						color,
+						target,
+						current: pixel,
+						options: sprayOptions,
+						timerId: 0,
+					};
+					sprayInteraction.timerId = window.setInterval(() => {
+						stampSpray(
+							sprayInteraction.target,
+							sprayInteraction.current.x,
+							sprayInteraction.current.y,
+							sprayInteraction.color,
+							sprayInteraction.options
+						);
+						liveDraw(sprayInteraction.target.data);
+					}, sprayOptions.rate);
+					interaction = sprayInteraction;
+					liveDraw(target.data);
+					break;
+				}
 				case "dither": {
-					const target = makeTarget(state);
+					const target = makeTarget(state, rawPixel);
 					const primaryPacked = hexToPacked(
 						primary ? state.primaryColor : state.secondaryColor
 					);
@@ -905,7 +1097,7 @@ export const PixelCanvas = (): FunctionComponent => {
 						tool: activeTool,
 						color,
 						base: state.pixels,
-						target: makeTarget(state),
+						target: makeTarget(state, rawPixel),
 						start: pixel,
 						size: state.brushSize,
 						shape: state.brushShape,
@@ -918,30 +1110,66 @@ export const PixelCanvas = (): FunctionComponent => {
 					break;
 				}
 				case "fill": {
-					const data = state.pixels.slice();
+					const target = makeTarget(state, rawPixel);
+					const data = target.data;
 					const changed = floodFill(
 						data,
 						state.width,
 						state.height,
-						pixel.x,
-						pixel.y,
+						rawPixel.x,
+						rawPixel.y,
 						color,
 						state.fillContiguous,
-						state.selection,
+						target.mask,
 						{
 							symmetryX: state.symmetryX,
 							symmetryY: state.symmetryY,
 							symmetryXPos: state.symmetryXPos,
 							symmetryYPos: state.symmetryYPos,
-							symmetryDiagonal: state.symmetryDiagonal,
 						}
 					);
 					if (changed) state.commitPixels(data);
 					break;
 				}
+				case "gradient": {
+					const target = makeTarget(state, rawPixel);
+					const primaryHex = primary
+						? state.primaryColor
+						: state.secondaryColor;
+					const secondaryHex = primary
+						? state.secondaryColor
+						: state.primaryColor;
+					const gradientInteraction: Extract<
+						Interaction,
+						{ kind: "gradient" }
+					> = {
+						kind: "gradient",
+						base: state.pixels,
+						target,
+						start: pixel,
+						seed: rawPixel,
+						primaryHex,
+						secondaryHex,
+						options: state.gradientOptions,
+					};
+					fillGradient(
+						gradientInteraction.target,
+						gradientInteraction.base,
+						pixel,
+						pixel,
+						primaryHex,
+						secondaryHex,
+						gradientInteraction.options,
+						rawPixel
+					);
+					interaction = gradientInteraction;
+					setPreview({ kind: "gradient", start: pixel, end: pixel });
+					liveDraw(gradientInteraction.target.data);
+					break;
+				}
 				case "replace": {
 					if (!inside) break;
-					const offset = pixel.y * state.width + pixel.x;
+					const offset = rawPixel.y * state.width + rawPixel.x;
 					let sampled = state.pixels[offset] ?? TRANSPARENT;
 					if (packedAlpha(sampled) === 0 && state.replaceScope !== "layer") {
 						sampled = compositeView(state)[offset] ?? TRANSPARENT;
@@ -962,17 +1190,30 @@ export const PixelCanvas = (): FunctionComponent => {
 					break;
 				}
 				case "eyedropper": {
-					pick(pixel, primary);
+					pick(rawPixel, primary);
 					interaction = { kind: "pick", primary };
 					break;
 				}
+				case "layer-picker": {
+					const hit = pickLayerAtPoint(
+						state.layers,
+						state.activeLayer,
+						visiblePixels(state),
+						state.width,
+						state.height,
+						point,
+						rawPixel
+					);
+					if (hit) {
+						state.setActiveLayer(hit.layerIndex);
+						state.showNotice(`Switched to layer "${hit.layer.name}"`);
+					} else {
+						state.showNotice("No visible layer pixel at cursor");
+					}
+					break;
+				}
 				case "wand": {
-					if (
-						pixel.x < 0 ||
-						pixel.y < 0 ||
-						pixel.x >= state.width ||
-						pixel.y >= state.height
-					) {
+					if (!inside) {
 						if (selectionMode(event) === "replace") state.deselect();
 						break;
 					}
@@ -980,8 +1221,8 @@ export const PixelCanvas = (): FunctionComponent => {
 						visiblePixels(state),
 						state.width,
 						state.height,
-						pixel.x,
-						pixel.y,
+						rawPixel.x,
+						rawPixel.y,
 						state.fillContiguous,
 						null
 					);
@@ -1029,7 +1270,7 @@ export const PixelCanvas = (): FunctionComponent => {
 				case "blur": {
 					const blur: Extract<Interaction, { kind: "blur" }> = {
 						kind: "blur",
-						target: makeTarget(state),
+						target: makeTarget(state, rawPixel),
 						touched: new Uint8Array(state.width * state.height),
 						sample: createBlurSampler(state.pixels, state.width, state.height, {
 							radius: state.blurRadius,
@@ -1054,7 +1295,7 @@ export const PixelCanvas = (): FunctionComponent => {
 						kind: "contour",
 						color,
 						base: state.pixels,
-						target: makeTarget(state),
+						target: makeTarget(state, rawPixel),
 						path: [pixel],
 						last: pixel,
 						size: state.brushSize,
@@ -1105,29 +1346,127 @@ export const PixelCanvas = (): FunctionComponent => {
 
 		const onPointerMove = (event: PointerEvent): void => {
 			const point = toDocument(event);
-			const pixel = toPixel(point);
+			const rawPixel = toPixel(point);
 			const state = getState();
+			const pixel = snapPixelIfEnabled(state, rawPixel);
 			const inside =
-				pixel.x >= 0 &&
-				pixel.y >= 0 &&
-				pixel.x < state.width &&
-				pixel.y < state.height;
-			state.setCursor(inside ? pixel : null);
+				rawPixel.x >= 0 &&
+				rawPixel.y >= 0 &&
+				rawPixel.x < state.width &&
+				rawPixel.y < state.height;
+			state.setCursor(inside ? rawPixel : null);
 			setHover((current) => {
 				if (!inside) return null;
 				return current?.x === pixel.x && current.y === pixel.y
 					? current
 					: pixel;
 			});
-			if (!interaction) return;
+			if (!interaction) {
+				const overHandle = hitPerspectiveHandle(state, point) !== null;
+				setHoveringVpHandle((current) =>
+					current === overHandle ? current : overHandle
+				);
+				return;
+			}
 
 			switch (interaction.kind) {
+				case "perspective-handle": {
+					const guide = state.perspectiveGuide;
+					if (interaction.handle === "point1") {
+						if (guide.mode === "1-point" || guide.mode === "fisheye") {
+							state.setPerspectiveGuide({
+								point1: {
+									x: Math.round(point.x * 2) / 2,
+									y: Math.round(point.y * 2) / 2,
+								},
+								...(guide.mode === "1-point"
+									? { horizonY: Math.round(point.y * 2) / 2 }
+									: {}),
+							});
+						} else {
+							const nextY = Math.round(point.y * 2) / 2;
+							state.setPerspectiveGuide({
+								horizonY: nextY,
+								point1: { x: Math.round(point.x * 2) / 2, y: nextY },
+							});
+						}
+					} else if (interaction.handle === "point2") {
+						const nextY = Math.round(point.y * 2) / 2;
+						state.setPerspectiveGuide({
+							horizonY: nextY,
+							point2: { x: Math.round(point.x * 2) / 2, y: nextY },
+						});
+					} else if (interaction.handle === "point3") {
+						state.setPerspectiveGuide({
+							point3: {
+								x: Math.round(point.x * 2) / 2,
+								y: Math.round(point.y * 2) / 2,
+							},
+						});
+					}
+					break;
+				}
 				case "paint": {
 					const { last } = interaction;
 					if (last.x === pixel.x && last.y === pixel.y) return;
 					const points = linePoints(last.x, last.y, pixel.x, pixel.y).slice(1);
 					for (const linePoint of points) paintPoint(interaction, linePoint);
 					interaction.last = pixel;
+					liveDraw(interaction.target.data);
+					break;
+				}
+				case "custom-brush": {
+					const { last } = interaction;
+					if (last.x === pixel.x && last.y === pixel.y) return;
+					const points = linePoints(last.x, last.y, pixel.x, pixel.y).slice(1);
+					let stampedAny = false;
+					for (const linePoint of points) {
+						if (
+							Math.hypot(
+								linePoint.x - interaction.lastStamped.x,
+								linePoint.y - interaction.lastStamped.y
+							) >= interaction.options.spacing
+						) {
+							stampCustomBrush(
+								interaction.target,
+								linePoint.x,
+								linePoint.y,
+								interaction.brush,
+								interaction.color,
+								interaction.options
+							);
+							interaction.lastStamped = linePoint;
+							stampedAny = true;
+						}
+					}
+					interaction.last = pixel;
+					if (stampedAny) liveDraw(interaction.target.data);
+					break;
+				}
+				case "spray": {
+					interaction.current = pixel;
+					break;
+				}
+				case "gradient": {
+					const endPoint = event.shiftKey
+						? constrainLine(interaction.start, pixel)
+						: pixel;
+					interaction.target.data.set(interaction.base);
+					fillGradient(
+						interaction.target,
+						interaction.base,
+						interaction.start,
+						endPoint,
+						interaction.primaryHex,
+						interaction.secondaryHex,
+						interaction.options,
+						interaction.seed
+					);
+					setPreview({
+						kind: "gradient",
+						start: interaction.start,
+						end: endPoint,
+					});
 					liveDraw(interaction.target.data);
 					break;
 				}
@@ -1159,7 +1498,7 @@ export const PixelCanvas = (): FunctionComponent => {
 					break;
 				}
 				case "pick": {
-					pick(pixel, interaction.primary);
+					pick(rawPixel, interaction.primary);
 					break;
 				}
 				case "blur": {
@@ -1270,6 +1609,21 @@ export const PixelCanvas = (): FunctionComponent => {
 					state.commitPixels(current.target.data);
 					break;
 				}
+				case "custom-brush": {
+					lastPaintPoint = current.last;
+					state.commitPixels(current.target.data);
+					break;
+				}
+				case "spray": {
+					window.clearInterval(current.timerId);
+					state.commitPixels(current.target.data);
+					break;
+				}
+				case "gradient": {
+					setPreview(null);
+					state.commitPixels(current.target.data);
+					break;
+				}
 				case "shape": {
 					state.commitPixels(current.target.data);
 					break;
@@ -1306,6 +1660,7 @@ export const PixelCanvas = (): FunctionComponent => {
 					setIsPanning(false);
 					break;
 				}
+				case "perspective-handle":
 				case "move":
 				case "ref-move":
 				case "pick":
@@ -1352,6 +1707,9 @@ export const PixelCanvas = (): FunctionComponent => {
 		container.addEventListener("wheel", onWheel, { passive: false });
 		container.addEventListener("contextmenu", onContextMenu);
 		return (): void => {
+			if (interaction?.kind === "spray") {
+				window.clearInterval(interaction.timerId);
+			}
 			container.removeEventListener("pointerdown", onPointerDown);
 			container.removeEventListener("pointermove", onPointerMove);
 			container.removeEventListener("pointerup", finish);
@@ -1372,14 +1730,18 @@ export const PixelCanvas = (): FunctionComponent => {
 		tool !== "hand" &&
 		tool !== "move" &&
 		tool !== "text" &&
+		tool !== "spray" &&
+		tool !== "layer-picker" &&
 		!spaceHeld;
-	const footprintOffsets = useMemo(
-		() =>
-			PAINT_TOOLS.has(tool)
-				? brushOffsets(brushSize, brushShape, customBrush)
-				: [{ x: 0, y: 0 }],
-		[tool, brushSize, brushShape, customBrush]
-	);
+	const footprintOffsets = useMemo(() => {
+		if (tool === "custom-brush") {
+			return brushOffsets(1, "custom", customBrush);
+		}
+		if (PAINT_TOOLS.has(tool)) {
+			return brushOffsets(brushSize, brushShape, customBrush);
+		}
+		return [{ x: 0, y: 0 }];
+	}, [tool, brushSize, brushShape, customBrush]);
 	const footprintEdges = useMemo(
 		() => offsetSetEdges(footprintOffsets),
 		[footprintOffsets]
@@ -1396,7 +1758,6 @@ export const PixelCanvas = (): FunctionComponent => {
 				symmetryY,
 				symmetryXPos,
 				symmetryYPos,
-				symmetryDiagonal,
 			},
 			hover.x,
 			hover.y
@@ -1411,10 +1772,26 @@ export const PixelCanvas = (): FunctionComponent => {
 		symmetryY,
 		symmetryXPos,
 		symmetryYPos,
-		symmetryDiagonal,
 	]);
 	const axisX = symmetryXPos ?? width / 2;
 	const axisY = symmetryYPos ?? height / 2;
+
+	const resolvedPerspective = useMemo(
+		() =>
+			perspectiveGuide.enabled
+				? resolvePerspectivePoints(perspectiveGuide, width, height)
+				: null,
+		[perspectiveGuide, width, height]
+	);
+	const fisheyeArcs = useMemo(() => {
+		if (!resolvedPerspective || perspectiveGuide.mode !== "fisheye") return [];
+		return computeFisheyeArcs(
+			resolvedPerspective.center,
+			resolvedPerspective.radius,
+			perspectiveGuide.lineCount,
+			perspectiveGuide.fisheyeCurvature
+		);
+	}, [resolvedPerspective, perspectiveGuide]);
 
 	const box = useMemo(
 		() =>
@@ -1425,9 +1802,11 @@ export const PixelCanvas = (): FunctionComponent => {
 
 	let cursor = "crosshair";
 	if (isPanning) cursor = "grabbing";
+	else if (hoveringVpHandle) cursor = "grab";
 	else if (spaceHeld || tool === "hand") cursor = "grab";
 	else if (tool === "move") cursor = "move";
 	else if (tool === "text") cursor = "text";
+	else if (tool === "layer-picker") cursor = "pointer";
 
 	const getSliceCanvas = (key: string): HTMLCanvasElement => {
 		let canvas = sliceCanvasesRef.current.get(key);
@@ -1480,6 +1859,54 @@ export const PixelCanvas = (): FunctionComponent => {
 						)}
 					</Group>
 				</Layer>
+				{tiledPreview.enabled && (
+					<Layer imageSmoothingEnabled={false} listening={false}>
+						<Group scaleX={zoom} scaleY={zoom} x={panX} y={panY}>
+							<Shape
+								perfectDrawEnabled={false}
+								sceneFunc={(context) => {
+									const documentLeft = -panX / zoom;
+									const documentTop = -panY / zoom;
+									const documentRight = (stageSize.width - panX) / zoom;
+									const documentBottom = (stageSize.height - panY) / zoom;
+									const minTileX =
+										tiledPreview.axis === "vertical"
+											? 0
+											: Math.max(-4, Math.floor(documentLeft / width));
+									const maxTileX =
+										tiledPreview.axis === "vertical"
+											? 0
+											: Math.min(4, Math.floor(documentRight / width));
+									const minTileY =
+										tiledPreview.axis === "horizontal"
+											? 0
+											: Math.max(-4, Math.floor(documentTop / height));
+									const maxTileY =
+										tiledPreview.axis === "horizontal"
+											? 0
+											: Math.min(4, Math.floor(documentBottom / height));
+
+									context.save();
+									context.setAttr("globalAlpha", tiledPreview.opacity / 100);
+									for (let ty = minTileY; ty <= maxTileY; ty++) {
+										for (let tx = minTileX; tx <= maxTileX; tx++) {
+											if (tx === 0 && ty === 0) continue;
+											const ox = tx * width;
+											const oy = ty * height;
+											context.setAttr("fillStyle", "rgba(161,161,170,0.35)");
+											context.fillRect(ox, oy, width, height);
+											context.drawImage(bufferCanvas, ox, oy, width, height);
+											context.setAttr("lineWidth", 1 / zoom);
+											context.setAttr("strokeStyle", "rgba(148,163,184,0.35)");
+											context.strokeRect(ox, oy, width, height);
+										}
+									}
+									context.restore();
+								}}
+							/>
+						</Group>
+					</Layer>
+				)}
 				{renderSlices.map((slice) => {
 					if (slice.kind === "pixels") {
 						const canvas =
@@ -1560,11 +1987,208 @@ export const PixelCanvas = (): FunctionComponent => {
 						)}
 						<Rect
 							height={height}
-							stroke="#52525b"
+							stroke={tiledPreview.enabled ? "#38bdf8" : "#52525b"}
 							strokeScaleEnabled={false}
-							strokeWidth={1}
+							strokeWidth={tiledPreview.enabled ? 2 : 1}
 							width={width}
 						/>
+						{rulerGrid.enabled && (
+							<Shape
+								perfectDrawEnabled={false}
+								sceneFunc={(context) => {
+									const cellW = Math.max(1, rulerGrid.cellWidth);
+									const cellH = Math.max(1, rulerGrid.cellHeight);
+									const offX = ((rulerGrid.offsetX % cellW) + cellW) % cellW;
+									const offY = ((rulerGrid.offsetY % cellH) + cellH) % cellH;
+									const half = 0.5 / zoom;
+									context.save();
+									context.setAttr("globalAlpha", rulerGrid.opacity / 100);
+									context.beginPath();
+									for (let x = offX; x <= width; x += cellW) {
+										context.moveTo(x + half, 0);
+										context.lineTo(x + half, height);
+									}
+									for (let y = offY; y <= height; y += cellH) {
+										context.moveTo(0, y + half);
+										context.lineTo(width, y + half);
+									}
+									context.setAttr("lineWidth", 1 / zoom);
+									context.setAttr("strokeStyle", rulerGrid.color);
+									context.stroke();
+
+									if (rulerGrid.showRuler) {
+										const tickLength = 4 / zoom;
+										const fontSize = Math.max(0.4, 9 / zoom);
+										context.beginPath();
+										context.moveTo(0, -1 / zoom);
+										context.lineTo(width, -1 / zoom);
+										context.moveTo(-1 / zoom, 0);
+										context.lineTo(-1 / zoom, height);
+										for (let x = offX; x <= width; x += cellW) {
+											context.moveTo(x + half, -tickLength);
+											context.lineTo(x + half, 0);
+										}
+										for (let y = offY; y <= height; y += cellH) {
+											context.moveTo(-tickLength, y + half);
+											context.lineTo(0, y + half);
+										}
+										context.stroke();
+										if (zoom >= 6) {
+											context.setAttr("fillStyle", rulerGrid.color);
+											context.setAttr(
+												"font",
+												`${fontSize}px ui-monospace, monospace`
+											);
+											for (let x = offX; x <= width; x += cellW) {
+												context.fillText(
+													String(x),
+													x + 1 / zoom,
+													-tickLength - 2 / zoom
+												);
+											}
+											for (let y = offY; y <= height; y += cellH) {
+												context.fillText(
+													String(y),
+													-tickLength - 12 / zoom,
+													y + fontSize * 0.8
+												);
+											}
+										}
+									}
+
+									if (rulerGrid.limitToCell && hover) {
+										const activeCell = gridCellBounds(
+											hover,
+											rulerGrid,
+											width,
+											height
+										);
+										context.setAttr("lineWidth", 2 / zoom);
+										context.setAttr("strokeStyle", "#fbbf24");
+										context.strokeRect(
+											activeCell.x,
+											activeCell.y,
+											activeCell.width,
+											activeCell.height
+										);
+									}
+									context.restore();
+								}}
+							/>
+						)}
+						{perspectiveGuide.enabled && resolvedPerspective && (
+							<Shape
+								perfectDrawEnabled={false}
+								sceneFunc={(context) => {
+									const documentLeft = -panX / zoom;
+									const documentTop = -panY / zoom;
+									const documentRight = (stageSize.width - panX) / zoom;
+									const documentBottom = (stageSize.height - panY) / zoom;
+									const span =
+										Math.max(
+											width,
+											height,
+											documentRight - documentLeft,
+											documentBottom - documentTop,
+											64
+										) * 2;
+									const rays = Math.max(4, perspectiveGuide.lineCount);
+
+									const drawRaysFrom = (
+										origin: Point,
+										strokeColor: string
+									): void => {
+										context.beginPath();
+										for (let index = 0; index < rays; index++) {
+											const angle = (index / rays) * Math.PI * 2;
+											context.moveTo(origin.x, origin.y);
+											context.lineTo(
+												origin.x + Math.cos(angle) * span,
+												origin.y + Math.sin(angle) * span
+											);
+										}
+										context.setAttr("lineWidth", 1 / zoom);
+										context.setAttr("strokeStyle", strokeColor);
+										context.stroke();
+									};
+
+									const drawHandle = (
+										point: Point,
+										label: string,
+										color: string
+									): void => {
+										const radius = 5 / zoom;
+										context.beginPath();
+										context.arc(point.x, point.y, radius, 0, Math.PI * 2);
+										context.setAttr("fillStyle", color);
+										context.fill();
+										context.setAttr("lineWidth", 1.5 / zoom);
+										context.setAttr("strokeStyle", "#ffffff");
+										context.stroke();
+										context.setAttr("fillStyle", "#ffffff");
+										context.setAttr("font", `bold ${10 / zoom}px sans-serif`);
+										context.fillText(label, point.x + 7 / zoom, point.y - 5 / zoom);
+									};
+
+									context.save();
+									context.setAttr("globalAlpha", perspectiveGuide.opacity / 100);
+
+									if (perspectiveGuide.mode === "fisheye") {
+										const { center, radius } = resolvedPerspective;
+										context.beginPath();
+										context.arc(center.x, center.y, radius, 0, Math.PI * 2);
+										context.moveTo(center.x - radius, center.y);
+										context.lineTo(center.x + radius, center.y);
+										context.moveTo(center.x, center.y - radius);
+										context.lineTo(center.x, center.y + radius);
+										for (const arc of fisheyeArcs) {
+											for (let index = 0; index < arc.length; index += 2) {
+												const px = arc[index] ?? 0;
+												const py = arc[index + 1] ?? 0;
+												if (index === 0) context.moveTo(px, py);
+												else context.lineTo(px, py);
+											}
+										}
+										context.setAttr("lineWidth", 1 / zoom);
+										context.setAttr("strokeStyle", "#38bdf8");
+										context.stroke();
+										drawHandle(center, "FE", "#38bdf8");
+									} else {
+										// Horizon line
+										context.beginPath();
+										context.moveTo(
+											documentLeft - span,
+											resolvedPerspective.horizonY
+										);
+										context.lineTo(
+											documentRight + span,
+											resolvedPerspective.horizonY
+										);
+										context.setAttr("lineWidth", 1.5 / zoom);
+										context.setLineDash([6 / zoom, 4 / zoom]);
+										context.setAttr("strokeStyle", "#f59e0b");
+										context.stroke();
+										context.setLineDash([]);
+
+										drawRaysFrom(resolvedPerspective.point1, "#38bdf8");
+										drawHandle(resolvedPerspective.point1, "VP1", "#38bdf8");
+
+										if (
+											perspectiveGuide.mode === "2-point" ||
+											perspectiveGuide.mode === "3-point"
+										) {
+											drawRaysFrom(resolvedPerspective.point2, "#a855f7");
+											drawHandle(resolvedPerspective.point2, "VP2", "#a855f7");
+										}
+										if (perspectiveGuide.mode === "3-point") {
+											drawRaysFrom(resolvedPerspective.point3, "#22c55e");
+											drawHandle(resolvedPerspective.point3, "VP3", "#22c55e");
+										}
+									}
+									context.restore();
+								}}
+							/>
+						)}
 						{symmetryX && (
 							<Line
 								dash={[4, 4]}
@@ -1581,28 +2205,6 @@ export const PixelCanvas = (): FunctionComponent => {
 								stroke="#f472b6"
 								strokeScaleEnabled={false}
 								strokeWidth={1}
-							/>
-						)}
-						{symmetryDiagonal && (
-							<Shape
-								perfectDrawEnabled={false}
-								sceneFunc={(context) => {
-									const span = Math.max(width, height);
-									context.save();
-									context.beginPath();
-									context.rect(0, 0, width, height);
-									context.clip();
-									context.beginPath();
-									context.moveTo(axisX - span, axisY - span);
-									context.lineTo(axisX + span, axisY + span);
-									context.moveTo(axisX - span, axisY + span);
-									context.lineTo(axisX + span, axisY - span);
-									context.setAttr("lineWidth", 1 / zoom);
-									context.setLineDash([4 / zoom, 4 / zoom]);
-									context.setAttr("strokeStyle", "rgba(56,189,248,0.75)");
-									context.stroke();
-									context.restore();
-								}}
 							/>
 						)}
 						{edges.length > 0 && (
@@ -1658,6 +2260,41 @@ export const PixelCanvas = (): FunctionComponent => {
 								stroke="#ffffff"
 								strokeScaleEnabled={false}
 								strokeWidth={1}
+							/>
+						)}
+						{preview?.kind === "gradient" && (
+							<Line
+								dash={[4, 4]}
+								stroke="#38bdf8"
+								strokeScaleEnabled={false}
+								strokeWidth={1.5}
+								points={[
+									preview.start.x + 0.5,
+									preview.start.y + 0.5,
+									preview.end.x + 0.5,
+									preview.end.y + 0.5,
+								]}
+							/>
+						)}
+						{hover !== null && tool === "spray" && !spaceHeld && (
+							<Shape
+								perfectDrawEnabled={false}
+								sceneFunc={(context) => {
+									context.save();
+									context.beginPath();
+									context.arc(
+										hover.x + 0.5,
+										hover.y + 0.5,
+										sprayOptions.radius,
+										0,
+										Math.PI * 2
+									);
+									context.setAttr("lineWidth", 1 / zoom);
+									context.setLineDash([3 / zoom, 3 / zoom]);
+									context.setAttr("strokeStyle", "#ffffff");
+									context.stroke();
+									context.restore();
+								}}
 							/>
 						)}
 						{textDraft && (

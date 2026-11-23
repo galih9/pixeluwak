@@ -2,9 +2,12 @@ import type { SpriteSheetMetadata } from "./lib/spritesheet";
 
 export type Tool =
 	| "pencil"
+	| "custom-brush"
 	| "eraser"
+	| "spray"
 	| "dither"
 	| "fill"
+	| "gradient"
 	| "replace"
 	| "eyedropper"
 	| "line"
@@ -14,6 +17,7 @@ export type Tool =
 	| "lasso"
 	| "wand"
 	| "move"
+	| "layer-picker"
 	| "hand"
 	| "text"
 	| "blur"
@@ -29,10 +33,91 @@ export type BrushShape =
 	| "custom";
 
 export type CustomBrush = {
+	id?: string;
+	name?: string;
 	width: number;
 	height: number;
 	/** 1 = active pixel, 0 = empty. */
 	mask: Uint8Array<ArrayBuffer>;
+	/** Optional packed RGBA colors per pixel for multi-color pattern brushes. */
+	colors?: PixelBuffer;
+};
+
+export type CustomBrushColorMode = "tint" | "original";
+
+export type CustomBrushOptions = {
+	spacing: number;
+	scatter: number;
+	randomFlipX: boolean;
+	randomFlipY: boolean;
+	randomRotate: boolean;
+	colorMode: CustomBrushColorMode;
+};
+
+export type SprayDistribution = "uniform" | "gaussian";
+
+export type SprayOptions = {
+	radius: number;
+	density: number;
+	dotSize: number;
+	rate: number;
+	distribution: SprayDistribution;
+};
+
+export type GradientType = "linear" | "radial" | "diamond";
+
+export type GradientDither =
+	| "smooth"
+	| "bayer2"
+	| "bayer4"
+	| "checker"
+	| "noise";
+
+export type GradientOptions = {
+	type: GradientType;
+	dither: GradientDither;
+	steps: number;
+	regionOnly: boolean;
+	contiguous: boolean;
+	reverse: boolean;
+};
+
+export type RulerGridSettings = {
+	enabled: boolean;
+	cellWidth: number;
+	cellHeight: number;
+	offsetX: number;
+	offsetY: number;
+	color: string;
+	opacity: number;
+	showRuler: boolean;
+	snapToGrid: boolean;
+	limitToCell: boolean;
+};
+
+export type PerspectiveMode = "1-point" | "2-point" | "3-point" | "fisheye";
+
+export type PerspectiveGuideSettings = {
+	enabled: boolean;
+	mode: PerspectiveMode;
+	horizonY: number | null;
+	point1: Point | null;
+	point2: Point | null;
+	point3: Point | null;
+	thirdPointDirection: "bottom" | "top";
+	lineCount: number;
+	opacity: number;
+	fisheyeRadius: number;
+	fisheyeCurvature: number;
+	lockHandles: boolean;
+};
+
+export type TiledPreviewAxis = "both" | "horizontal" | "vertical";
+
+export type TiledPreviewSettings = {
+	enabled: boolean;
+	axis: TiledPreviewAxis;
+	opacity: number;
 };
 
 export type DitherPattern =
@@ -168,7 +253,46 @@ export type DialogKind =
 	| "outline"
 	| "custom-brush"
 	| "spritesheet"
-	| "tilemap";
+	| "tilemap"
+	| "settings";
+
+export type ThemeId =
+	| "system"
+	| "light"
+	| "dark"
+	| "espresso"
+	| "matcha"
+	| "gameboy"
+	| "midnight";
+
+export type PanelId =
+	| "colorPicker"
+	| "palette"
+	| "preview"
+	| "layers"
+	| "frames"
+	| "tilemap"
+	| "toolOptions"
+	| "statusBar";
+
+export type ToolSortMode =
+	| "category"
+	| "alphabetical"
+	| "most-used"
+	| "manual";
+
+export type WorkspacePresetId =
+	| "studio"
+	| "illustration"
+	| "animation"
+	| "zen";
+
+export type ToolCategory =
+	| "draw"
+	| "color"
+	| "shapes"
+	| "select"
+	| "navigate";
 
 /**
  * How frames are arranged on a sprite sheet:

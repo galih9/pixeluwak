@@ -7,9 +7,10 @@ import { useEditorStore } from "../store/editorStore";
 import type { ResizeAnchor } from "../types";
 import { CustomBrushDialog } from "./CustomBrushDialog";
 import { OutlineDialog } from "./OutlineDialog";
+import { SettingsDialog } from "./SettingsDialog";
 import { SpriteSheetDialog } from "./SpriteSheetDialog";
 import { TilemapDialog } from "./TilemapPreview";
-import { Modal, TextButton } from "./ui";
+import { Kbd, Modal, TextButton } from "./ui";
 
 const clampInput = (value: string): number =>
 	Math.max(1, Math.min(MAX_CANVAS_SIZE, Math.round(Number(value)) || 1));
@@ -28,7 +29,7 @@ const NewCanvasDialog = ({
 	const [anchor, setAnchor] = useState<ResizeAnchor>("center");
 
 	const inputClass =
-		"w-20 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-zinc-100 outline-none focus:border-sky-500";
+		"w-20 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]";
 
 	return (
 		<Modal
@@ -58,7 +59,7 @@ const NewCanvasDialog = ({
 			}
 			onClose={onClose}
 		>
-			<p className="mb-2 text-xs text-zinc-400">Presets</p>
+			<p className="mb-2 text-xs text-[var(--pe-text-muted)]">Presets</p>
 			<div className="mb-4 flex flex-wrap gap-1.5">
 				{SIZE_PRESETS.map((size) => (
 					<TextButton
@@ -87,7 +88,7 @@ const NewCanvasDialog = ({
 						}}
 					/>
 				</label>
-				<span className="text-zinc-500">×</span>
+				<span className="text-[var(--pe-text-muted)]">×</span>
 				<label className="flex items-center gap-2">
 					H
 					<input
@@ -101,12 +102,14 @@ const NewCanvasDialog = ({
 						}}
 					/>
 				</label>
-				<span className="text-xs text-zinc-500">max {MAX_CANVAS_SIZE}</span>
+				<span className="text-xs text-[var(--pe-text-muted)]">
+					max {MAX_CANVAS_SIZE}
+				</span>
 			</div>
-			<label className="flex items-center gap-2 text-xs text-zinc-400">
+			<label className="flex items-center gap-2 text-xs text-[var(--pe-text-muted)]">
 				When resizing, keep the drawing at the
 				<select
-					className="rounded-md border border-zinc-700 bg-zinc-800 px-1.5 py-1 text-zinc-100"
+					className="rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-1 text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
 					value={anchor}
 					onChange={(event) => {
 						setAnchor(event.target.value as ResizeAnchor);
@@ -212,7 +215,7 @@ const ExportDialog = ({
 					<label className="flex items-center gap-2">
 						Frames
 						<select
-							className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-zinc-100"
+							className="flex-1 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
 							value={tagId ?? ""}
 							onChange={(event) => {
 								setTagId(
@@ -229,7 +232,7 @@ const ExportDialog = ({
 							))}
 						</select>
 					</label>
-					<p className="mt-1.5 text-xs text-zinc-500">
+					<p className="mt-1.5 text-xs text-[var(--pe-text-muted)]">
 						{sequence.length} frames · {seconds.toFixed(2)}s per loop · loops
 						forever. GIF has no partial transparency: pixels under 50% opacity
 						become transparent, the rest solid.
@@ -237,7 +240,7 @@ const ExportDialog = ({
 				</div>
 			) : (
 				animated && (
-					<p className="mb-4 text-xs text-zinc-500">
+					<p className="mb-4 text-xs text-[var(--pe-text-muted)]">
 						Exports frame {currentFrame + 1} (the one on the canvas).
 					</p>
 				)
@@ -245,14 +248,14 @@ const ExportDialog = ({
 			<label className="mb-4 flex items-center gap-2">
 				File name
 				<input
-					className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-zinc-100 outline-none focus:border-sky-500"
+					className="flex-1 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
 					value={fileName}
 					onChange={(event) => {
 						setFileName(event.target.value);
 					}}
 				/>
 			</label>
-			<p className="mb-2 text-xs text-zinc-400">
+			<p className="mb-2 text-xs text-[var(--pe-text-muted)]">
 				Scale (nearest neighbour, stays crisp)
 			</p>
 			<div className="flex flex-wrap gap-1.5">
@@ -273,12 +276,14 @@ const ExportDialog = ({
 };
 
 const SHORTCUTS: Array<[string, string]> = [
-	["B / E / G / I", "Pencil / Eraser / Fill / Eyedropper"],
+	["B / J / E / S", "Pencil / Custom brush / Eraser / Spray"],
+	["G / F / I", "Fill / Gradient / Eyedropper"],
 	["P / C", "Dithering brush / Magic color replace"],
 	["L / U / O", "Line / Rectangle / Ellipse"],
 	["M / Q / W", "Rect select / Lasso / Magic wand"],
 	["D / R / T", "Contour / Blur brush / Text"],
-	["V / H", "Move / Hand"],
+	["V / Y / H", "Move / Layer picker / Hand"],
+	["Ctrl+,", "Studio settings"],
 	["Shift+N", "New layer"],
 	["Alt+N / Alt+Shift+N", "Duplicate frame / New empty frame"],
 	["Enter", "Play / pause animation"],
@@ -317,11 +322,13 @@ const HelpDialog = ({
 		title="Keyboard shortcuts"
 		onClose={onClose}
 	>
-		<dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-xs">
+		<dl className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 text-xs">
 			{SHORTCUTS.map(([keys, action]) => (
-				<div key={keys} className="contents">
-					<dt className="font-mono text-zinc-200">{keys}</dt>
-					<dd className="text-zinc-400">{action}</dd>
+				<div key={`${keys}-${action}`} className="contents">
+					<dt>
+						<Kbd>{keys}</Kbd>
+					</dt>
+					<dd className="text-[var(--pe-text-secondary)]">{action}</dd>
 				</div>
 			))}
 		</dl>
@@ -341,5 +348,6 @@ export const Dialogs = (): FunctionComponent => {
 	if (dialog === "custom-brush") return <CustomBrushDialog onClose={close} />;
 	if (dialog === "spritesheet") return <SpriteSheetDialog onClose={close} />;
 	if (dialog === "tilemap") return <TilemapDialog onClose={close} />;
+	if (dialog === "settings") return <SettingsDialog onClose={close} />;
 	return null;
 };

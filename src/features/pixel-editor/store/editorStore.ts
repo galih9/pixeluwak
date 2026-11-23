@@ -2,7 +2,13 @@ import { create } from "zustand";
 import {
 	DEFAULT_CANVAS_SIZE,
 	DEFAULT_COLOR_RAMP,
+	DEFAULT_CUSTOM_BRUSH_OPTIONS,
+	DEFAULT_GRADIENT_OPTIONS,
 	DEFAULT_PALETTE,
+	DEFAULT_PERSPECTIVE_GUIDE,
+	DEFAULT_RULER_GRID,
+	DEFAULT_SPRAY_OPTIONS,
+	DEFAULT_TILED_PREVIEW,
 	MAX_BRUSH_SIZE,
 	MAX_CANVAS_SIZE,
 	MAX_FRAMES,
@@ -11,6 +17,7 @@ import {
 	MIN_CANVAS_SIZE,
 	ZOOM_LEVELS,
 } from "../constants";
+import { BUILTIN_CUSTOM_BRUSHES, cloneCustomBrush } from "../lib/brushPresets";
 import {
 	celsOf,
 	clampDuration,
@@ -67,22 +74,28 @@ import type {
 	Clip,
 	ColorRampOptions,
 	CustomBrush,
+	CustomBrushOptions,
 	DialogKind,
 	DitherPattern,
 	Floating,
 	Frame,
 	FrameTag,
+	GradientOptions,
 	Layer,
 	Notice,
+	PerspectiveGuideSettings,
 	PixelBuffer,
 	Point,
 	ReferenceImageData,
 	ReplaceScope,
 	ResizeAnchor,
+	RulerGridSettings,
 	SelectionMask,
 	SelectionMode,
 	Snapshot,
+	SprayOptions,
 	TextStyle,
+	TiledPreviewSettings,
 	Tool,
 } from "../types";
 
@@ -115,6 +128,14 @@ type ToolState = {
 	brushSize: number;
 	brushShape: BrushShape;
 	customBrush: CustomBrush;
+	customBrushPresets: Array<CustomBrush>;
+	activeCustomBrushId: string;
+	customBrushOptions: CustomBrushOptions;
+	sprayOptions: SprayOptions;
+	gradientOptions: GradientOptions;
+	rulerGrid: RulerGridSettings;
+	perspectiveGuide: PerspectiveGuideSettings;
+	tiledPreview: TiledPreviewSettings;
 	pixelPerfect: boolean;
 	shapeFilled: boolean;
 	fillContiguous: boolean;
@@ -249,6 +270,20 @@ type Actions = {
 	setBrushSize: (size: number) => void;
 	setBrushShape: (shape: BrushShape) => void;
 	setCustomBrush: (brush: CustomBrush) => void;
+	selectCustomBrushPreset: (id: string) => void;
+	saveCustomBrushPreset: (name: string, brush: CustomBrush) => void;
+	deleteCustomBrushPreset: (id: string) => void;
+	setCustomBrushOptions: (patch: Partial<CustomBrushOptions>) => void;
+	setSprayOptions: (patch: Partial<SprayOptions>) => void;
+	setGradientOptions: (patch: Partial<GradientOptions>) => void;
+	toggleRulerGrid: () => void;
+	setRulerGrid: (patch: Partial<RulerGridSettings>) => void;
+	resetRulerGrid: () => void;
+	togglePerspectiveGuide: () => void;
+	setPerspectiveGuide: (patch: Partial<PerspectiveGuideSettings>) => void;
+	resetPerspectiveGuide: () => void;
+	toggleTiledPreview: () => void;
+	setTiledPreview: (patch: Partial<TiledPreviewSettings>) => void;
 	captureCustomBrush: () => boolean;
 	togglePixelPerfect: () => void;
 	toggleShapeFilled: () => void;
@@ -581,7 +616,17 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 	palette: saved?.palette ?? DEFAULT_PALETTE,
 	brushSize: 1,
 	brushShape: "square",
-	customBrush: createDefaultCustomBrush(),
+	customBrush: cloneCustomBrush(
+		BUILTIN_CUSTOM_BRUSHES[0] ?? createDefaultCustomBrush()
+	),
+	customBrushPresets: BUILTIN_CUSTOM_BRUSHES.map(cloneCustomBrush),
+	activeCustomBrushId: BUILTIN_CUSTOM_BRUSHES[0]?.id ?? "custom",
+	customBrushOptions: DEFAULT_CUSTOM_BRUSH_OPTIONS,
+	sprayOptions: DEFAULT_SPRAY_OPTIONS,
+	gradientOptions: DEFAULT_GRADIENT_OPTIONS,
+	rulerGrid: DEFAULT_RULER_GRID,
+	perspectiveGuide: DEFAULT_PERSPECTIVE_GUIDE,
+	tiledPreview: DEFAULT_TILED_PREVIEW,
 	pixelPerfect: false,
 	shapeFilled: false,
 	fillContiguous: true,
@@ -1807,7 +1852,138 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 	},
 
 	setCustomBrush: (customBrush): void => {
-		set({ customBrush, brushShape: "custom" });
+		set({
+			customBrush: cloneCustomBrush(customBrush),
+			activeCustomBrushId: customBrush.id ?? "custom",
+			brushShape: "custom",
+		});
+	},
+
+	selectCustomBrushPreset: (id): void => {
+		const preset = get().customBrushPresets.find((item) => item.id === id);
+		if (!preset) return;
+		set({
+			customBrush: cloneCustomBrush(preset),
+			activeCustomBrushId: id,
+			brushShape: "custom",
+		});
+	},
+
+	saveCustomBrushPreset: (name, brush): void => {
+		const trimmed = name.trim() || "Custom Pattern";
+		const id = `user-${Date.now()}`;
+		const savedPreset: CustomBrush = {
+			...cloneCustomBrush(brush),
+			id,
+			name: trimmed,
+		};
+		set((state) => ({
+			customBrushPresets: [...state.customBrushPresets, savedPreset],
+			customBrush: cloneCustomBrush(savedPreset),
+			activeCustomBrushId: id,
+			brushShape: "custom",
+		}));
+	},
+
+	deleteCustomBrushPreset: (id): void => {
+		if (!id.startsWith("user-")) return;
+		set((state) => {
+			const remaining = state.customBrushPresets.filter(
+				(item) => item.id !== id
+			);
+			const nextActive =
+				state.activeCustomBrushId === id
+					? (remaining[0] ?? createDefaultCustomBrush())
+					: state.customBrush;
+			const nextActiveId =
+				state.activeCustomBrushId === id
+					? (remaining[0]?.id ?? "custom")
+					: state.activeCustomBrushId;
+			return {
+				customBrushPresets: remaining,
+				customBrush: cloneCustomBrush(nextActive),
+				activeCustomBrushId: nextActiveId,
+			};
+		});
+	},
+
+	setCustomBrushOptions: (patch): void => {
+		set((state) => ({
+			customBrushOptions: { ...state.customBrushOptions, ...patch },
+		}));
+	},
+
+	setSprayOptions: (patch): void => {
+		set((state) => ({
+			sprayOptions: { ...state.sprayOptions, ...patch },
+		}));
+	},
+
+	setGradientOptions: (patch): void => {
+		set((state) => ({
+			gradientOptions: { ...state.gradientOptions, ...patch },
+		}));
+	},
+
+	toggleRulerGrid: (): void => {
+		set((state) => ({
+			rulerGrid: { ...state.rulerGrid, enabled: !state.rulerGrid.enabled },
+		}));
+	},
+
+	setRulerGrid: (patch): void => {
+		set((state) => ({
+			rulerGrid: { ...state.rulerGrid, ...patch },
+		}));
+	},
+
+	resetRulerGrid: (): void => {
+		set((state) => ({
+			rulerGrid: {
+				...DEFAULT_RULER_GRID,
+				enabled: state.rulerGrid.enabled,
+			},
+		}));
+	},
+
+	togglePerspectiveGuide: (): void => {
+		set((state) => ({
+			perspectiveGuide: {
+				...state.perspectiveGuide,
+				enabled: !state.perspectiveGuide.enabled,
+			},
+		}));
+	},
+
+	setPerspectiveGuide: (patch): void => {
+		set((state) => ({
+			perspectiveGuide: { ...state.perspectiveGuide, ...patch },
+		}));
+	},
+
+	resetPerspectiveGuide: (): void => {
+		set((state) => ({
+			perspectiveGuide: {
+				...DEFAULT_PERSPECTIVE_GUIDE,
+				enabled: state.perspectiveGuide.enabled,
+				mode: state.perspectiveGuide.mode,
+			},
+		}));
+	},
+
+	toggleTiledPreview: (): void => {
+		set((state) => ({
+			tiledPreview: {
+				...state.tiledPreview,
+				enabled: !state.tiledPreview.enabled,
+			},
+		}));
+	},
+
+	setTiledPreview: (patch): void => {
+		set((state) => ({
+			tiledPreview: { ...state.tiledPreview, ...patch },
+		}));
 	},
 
 	captureCustomBrush: (): boolean => {
@@ -1822,7 +1998,11 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 			state.showNotice("Select non-empty pixels first to capture a brush");
 			return false;
 		}
-		set({ customBrush: captured, brushShape: "custom" });
+		set({
+			customBrush: captured,
+			activeCustomBrushId: "custom",
+			brushShape: "custom",
+		});
 		state.showNotice(
 			`Captured ${captured.width}×${captured.height} custom brush`
 		);

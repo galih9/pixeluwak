@@ -47,6 +47,7 @@ export function useShortcuts(): void {
 				else if (key === "o") void openFile();
 				else if (key === "e" && event.shiftKey) state.openDialog("spritesheet");
 				else if (key === "e") state.openDialog("export");
+				else if (key === ",") state.openDialog("settings");
 				else handled = false;
 				if (handled) event.preventDefault();
 				return;

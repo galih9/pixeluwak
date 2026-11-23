@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { FunctionComponent } from "../../../common/types";
 import {
 	BRUSH_SHAPES,
@@ -6,11 +6,66 @@ import {
 	MAX_BRUSH_SIZE,
 	TOOLS,
 } from "../constants";
+import { packedAlpha, packedToHex } from "../lib/color";
 import { importReferenceImage } from "../lib/files";
 import { isPixelFont, TEXT_FONTS } from "../lib/text";
+import { pickLayerAtPoint } from "../lib/tools";
 import { useEditorStore } from "../store/editorStore";
-import type { DitherPattern, ReplaceScope, TextFont } from "../types";
+import type {
+	CustomBrush,
+	DitherPattern,
+	GradientDither,
+	GradientType,
+	ReplaceScope,
+	TextFont,
+} from "../types";
+import { ToolIcon } from "./ToolIcon";
 import { Divider, TextButton, Toggle } from "./ui";
+
+const inputClass =
+	"rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-0.5 text-xs text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]";
+
+const Hint = ({ children }: { children: string }): FunctionComponent => (
+	<span className="ml-auto hidden shrink-0 pl-2 text-[11px] text-[var(--pe-text-muted)] xl:inline">
+		{children}
+	</span>
+);
+
+const NumberSlider = ({
+	label,
+	value,
+	min,
+	max,
+	suffix = "",
+	width = "w-24",
+	onChange,
+}: {
+	label: string;
+	value: number;
+	min: number;
+	max: number;
+	suffix?: string;
+	width?: string;
+	onChange: (value: number) => void;
+}): FunctionComponent => (
+	<label className="flex shrink-0 items-center gap-2 text-xs text-[var(--pe-text-secondary)]">
+		{label}
+		<input
+			className={`${width} accent-[var(--pe-accent)]`}
+			max={max}
+			min={min}
+			type="range"
+			value={value}
+			onChange={(event) => {
+				onChange(Number(event.target.value));
+			}}
+		/>
+		<span className="w-9 tabular-nums text-[var(--pe-text)]">
+			{value}
+			{suffix}
+		</span>
+	</label>
+);
 
 const BrushOptions = ({
 	showPixelPerfect,
@@ -34,10 +89,10 @@ const BrushOptions = ({
 
 	return (
 		<>
-			<label className="flex shrink-0 items-center gap-2 text-xs text-zinc-400">
+			<label className="flex shrink-0 items-center gap-2 text-xs text-[var(--pe-text-secondary)]">
 				Size
 				<input
-					className="w-24 accent-sky-500"
+					className="w-24 accent-[var(--pe-accent)]"
 					disabled={brushShape === "custom"}
 					max={MAX_BRUSH_SIZE}
 					min={1}
@@ -47,7 +102,7 @@ const BrushOptions = ({
 						setBrushSize(Number(event.target.value));
 					}}
 				/>
-				<span className="w-10 tabular-nums text-zinc-200">
+				<span className="w-10 tabular-nums text-[var(--pe-text)]">
 					{brushShape === "custom"
 						? `${customBrush.width}×${customBrush.height}`
 						: `${brushSize}px`}
@@ -96,81 +151,346 @@ const BrushOptions = ({
 	);
 };
 
-const SymmetryOptions = (): FunctionComponent => {
-	const width = useEditorStore((state) => state.width);
-	const height = useEditorStore((state) => state.height);
-	const symmetryX = useEditorStore((state) => state.symmetryX);
-	const symmetryY = useEditorStore((state) => state.symmetryY);
-	const symmetryXPos = useEditorStore((state) => state.symmetryXPos);
-	const symmetryYPos = useEditorStore((state) => state.symmetryYPos);
-	const symmetryDiagonal = useEditorStore((state) => state.symmetryDiagonal);
-	const toggleSymmetryX = useEditorStore((state) => state.toggleSymmetryX);
-	const toggleSymmetryY = useEditorStore((state) => state.toggleSymmetryY);
-	const toggleSymmetryDiagonal = useEditorStore(
-		(state) => state.toggleSymmetryDiagonal
+const CustomBrushThumbnail = ({
+	brush,
+}: {
+	brush: CustomBrush;
+}): FunctionComponent => {
+	const primaryColor = useEditorStore((state) => state.primaryColor);
+	const cells = Array.from(brush.mask);
+	return (
+		<div
+			aria-hidden="true"
+			className="swatch-preserve grid h-6 w-6 shrink-0 overflow-hidden rounded border border-[var(--pe-border)] bg-[var(--pe-bg-control)] p-0.5"
+			style={{
+				gridTemplateColumns: `repeat(${brush.width}, minmax(0, 1fr))`,
+				gridTemplateRows: `repeat(${brush.height}, minmax(0, 1fr))`,
+			}}
+		>
+			{cells.map((value, index) => {
+				const packed = brush.colors?.[index] ?? 0;
+				const active = value === 1;
+				const fill = !active
+					? "transparent"
+					: packedAlpha(packed) > 0
+						? packedToHex(packed)
+						: primaryColor;
+				return <span key={index} style={{ backgroundColor: fill }} />;
+			})}
+		</div>
 	);
-	const setSymmetryXPos = useEditorStore((state) => state.setSymmetryXPos);
-	const setSymmetryYPos = useEditorStore((state) => state.setSymmetryYPos);
-	const resetSymmetryAxes = useEditorStore((state) => state.resetSymmetryAxes);
+};
 
-	const axisX = symmetryXPos ?? width / 2;
-	const axisY = symmetryYPos ?? height / 2;
-	const hasCustomAxis = symmetryXPos !== null || symmetryYPos !== null;
+const CustomBrushOptionsBar = (): FunctionComponent => {
+	const customBrush = useEditorStore((state) => state.customBrush);
+	const presets = useEditorStore((state) => state.customBrushPresets);
+	const activeId = useEditorStore((state) => state.activeCustomBrushId);
+	const selectPreset = useEditorStore((state) => state.selectCustomBrushPreset);
+	const options = useEditorStore((state) => state.customBrushOptions);
+	const setOptions = useEditorStore((state) => state.setCustomBrushOptions);
+	const captureCustomBrush = useEditorStore(
+		(state) => state.captureCustomBrush
+	);
+	const hasSelection = useEditorStore((state) => state.selection !== null);
+	const openDialog = useEditorStore((state) => state.openDialog);
+	const hasColors = customBrush.colors !== undefined;
 
 	return (
 		<>
-			<Divider />
-			<span className="shrink-0 text-xs text-zinc-400">Mirror</span>
-			<Toggle
-				checked={symmetryX}
-				label="H"
-				onChange={toggleSymmetryX}
-			/>
-			<Toggle checked={symmetryY} label="V" onChange={toggleSymmetryY} />
-			<Toggle
-				checked={symmetryDiagonal}
-				label="4-way"
-				onChange={toggleSymmetryDiagonal}
-			/>
-			{symmetryX && (
-				<label className="flex shrink-0 items-center gap-1 text-[11px] text-zinc-400">
-					X
-					<input
-						aria-label="Vertical mirror axis position"
-						className="w-12 rounded border border-zinc-700 bg-zinc-800 px-1 py-0.5 text-center tabular-nums text-zinc-100 outline-none focus:border-sky-500"
-						max={width - 0.5}
-						min={0.5}
-						step={0.5}
-						type="number"
-						value={axisX}
-						onChange={(event) => {
-							setSymmetryXPos(Number(event.target.value));
-						}}
-					/>
-				</label>
-			)}
-			{symmetryY && (
-				<label className="flex shrink-0 items-center gap-1 text-[11px] text-zinc-400">
-					Y
-					<input
-						aria-label="Horizontal mirror axis position"
-						className="w-12 rounded border border-zinc-700 bg-zinc-800 px-1 py-0.5 text-center tabular-nums text-zinc-100 outline-none focus:border-sky-500"
-						max={height - 0.5}
-						min={0.5}
-						step={0.5}
-						type="number"
-						value={axisY}
-						onChange={(event) => {
-							setSymmetryYPos(Number(event.target.value));
-						}}
-					/>
-				</label>
-			)}
-			{hasCustomAxis && (
-				<TextButton title="Center symmetry axes" onClick={resetSymmetryAxes}>
-					Center
+			<CustomBrushThumbnail brush={customBrush} />
+			<label className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]">
+				Pattern
+				<select
+					className={`${inputClass} py-1`}
+					value={presets.some((item) => item.id === activeId) ? activeId : "custom"}
+					onChange={(event) => {
+						if (event.target.value !== "custom") {
+							selectPreset(event.target.value);
+						}
+					}}
+				>
+					{presets.map((preset) => (
+						<option key={preset.id ?? preset.name} value={preset.id}>
+							{preset.name ?? "Pattern"} ({preset.width}×{preset.height})
+						</option>
+					))}
+					{!presets.some((item) => item.id === activeId) && (
+						<option value="custom">
+							Custom ({customBrush.width}×{customBrush.height})
+						</option>
+					)}
+				</select>
+			</label>
+			<TextButton
+				title="Open custom pattern brush editor"
+				onClick={() => {
+					openDialog("custom-brush");
+				}}
+			>
+				Edit pattern…
+			</TextButton>
+			{hasSelection && (
+				<TextButton
+					title="Capture current selection as custom brush"
+					onClick={() => {
+						captureCustomBrush();
+					}}
+				>
+					From selection
 				</TextButton>
 			)}
+			<Divider />
+			<NumberSlider
+				label="Spacing"
+				max={16}
+				min={1}
+				suffix="px"
+				value={options.spacing}
+				width="w-16"
+				onChange={(spacing) => {
+					setOptions({ spacing });
+				}}
+			/>
+			<NumberSlider
+				label="Scatter"
+				max={12}
+				min={0}
+				suffix="px"
+				value={options.scatter}
+				width="w-16"
+				onChange={(scatter) => {
+					setOptions({ scatter });
+				}}
+			/>
+			<Toggle
+				checked={options.randomFlipX || options.randomFlipY}
+				label="Random flip"
+				onChange={() => {
+					const next = !(options.randomFlipX || options.randomFlipY);
+					setOptions({ randomFlipX: next, randomFlipY: next });
+				}}
+			/>
+			<Toggle
+				checked={options.randomRotate}
+				label="Random rotate"
+				onChange={() => {
+					setOptions({ randomRotate: !options.randomRotate });
+				}}
+			/>
+			{hasColors && (
+				<Toggle
+					checked={options.colorMode === "original"}
+					label="Use colors"
+					onChange={() => {
+						setOptions({
+							colorMode:
+								options.colorMode === "original" ? "tint" : "original",
+						});
+					}}
+				/>
+			)}
+			<Hint>Draw foliage, leaves, grass or hair stamps smoothly</Hint>
+		</>
+	);
+};
+
+const SprayOptionsBar = (): FunctionComponent => {
+	const options = useEditorStore((state) => state.sprayOptions);
+	const setOptions = useEditorStore((state) => state.setSprayOptions);
+
+	return (
+		<>
+			<NumberSlider
+				label="Radius"
+				max={24}
+				min={2}
+				suffix="px"
+				value={options.radius}
+				width="w-20"
+				onChange={(radius) => {
+					setOptions({ radius });
+				}}
+			/>
+			<NumberSlider
+				label="Density"
+				max={100}
+				min={5}
+				suffix="%"
+				value={options.density}
+				width="w-20"
+				onChange={(density) => {
+					setOptions({ density });
+				}}
+			/>
+			<NumberSlider
+				label="Dot"
+				max={4}
+				min={1}
+				suffix="px"
+				value={options.dotSize}
+				width="w-14"
+				onChange={(dotSize) => {
+					setOptions({ dotSize });
+				}}
+			/>
+			<Divider />
+			<div className="flex shrink-0 items-center gap-1">
+				<TextButton
+					active={options.distribution === "uniform"}
+					onClick={() => {
+						setOptions({ distribution: "uniform" });
+					}}
+				>
+					Uniform
+				</TextButton>
+				<TextButton
+					active={options.distribution === "gaussian"}
+					onClick={() => {
+						setOptions({ distribution: "gaussian" });
+					}}
+				>
+					Soft
+				</TextButton>
+			</div>
+			<Hint>Hold pointer to spray particles · Right click: secondary color</Hint>
+		</>
+	);
+};
+
+const GRADIENT_TYPES: Array<{ id: GradientType; label: string }> = [
+	{ id: "linear", label: "Linear" },
+	{ id: "radial", label: "Radial" },
+	{ id: "diamond", label: "Diamond" },
+];
+
+const GRADIENT_DITHERS: Array<{ id: GradientDither; label: string }> = [
+	{ id: "bayer4", label: "Bayer 4×4" },
+	{ id: "bayer2", label: "Bayer 2×2" },
+	{ id: "checker", label: "Checker" },
+	{ id: "noise", label: "Noise" },
+	{ id: "smooth", label: "Smooth" },
+];
+
+const GradientOptionsBar = (): FunctionComponent => {
+	const options = useEditorStore((state) => state.gradientOptions);
+	const setOptions = useEditorStore((state) => state.setGradientOptions);
+
+	return (
+		<>
+			<div className="flex shrink-0 items-center gap-1">
+				{GRADIENT_TYPES.map((item) => (
+					<TextButton
+						key={item.id}
+						active={options.type === item.id}
+						onClick={() => {
+							setOptions({ type: item.id });
+						}}
+					>
+						{item.label}
+					</TextButton>
+				))}
+			</div>
+			<Divider />
+			<label className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]">
+				Dither
+				<select
+					className={`${inputClass} py-1`}
+					value={options.dither}
+					onChange={(event) => {
+						setOptions({ dither: event.target.value as GradientDither });
+					}}
+				>
+					{GRADIENT_DITHERS.map((dither) => (
+						<option key={dither.id} value={dither.id}>
+							{dither.label}
+						</option>
+					))}
+				</select>
+			</label>
+			<label className="flex shrink-0 items-center gap-2 text-xs text-[var(--pe-text-secondary)]">
+				Bands
+				<input
+					className="w-16 accent-[var(--pe-accent)]"
+					max={16}
+					min={0}
+					type="range"
+					value={options.steps}
+					onChange={(event) => {
+						setOptions({ steps: Number(event.target.value) });
+					}}
+				/>
+				<span className="w-9 tabular-nums text-[var(--pe-text)]">
+					{options.steps < 2 ? "Auto" : options.steps}
+				</span>
+			</label>
+			<Toggle
+				checked={options.regionOnly}
+				label="Region"
+				onChange={() => {
+					setOptions({ regionOnly: !options.regionOnly });
+				}}
+			/>
+			{options.regionOnly && (
+				<Toggle
+					checked={options.contiguous}
+					label="Contiguous"
+					onChange={() => {
+						setOptions({ contiguous: !options.contiguous });
+					}}
+				/>
+			)}
+			<Toggle
+				checked={options.reverse}
+				label="Reverse"
+				onChange={() => {
+					setOptions({ reverse: !options.reverse });
+				}}
+			/>
+			<Hint>Drag to set angle &amp; length · Shift: snap angle</Hint>
+		</>
+	);
+};
+
+const LayerPickerOptionsBar = (): FunctionComponent => {
+	const layers = useEditorStore((state) => state.layers);
+	const activeLayerIndex = useEditorStore((state) => state.activeLayer);
+	const pixels = useEditorStore((state) => state.pixels);
+	const width = useEditorStore((state) => state.width);
+	const height = useEditorStore((state) => state.height);
+	const cursor = useEditorStore((state) => state.cursor);
+	const activeLayer = layers[activeLayerIndex];
+
+	const hoveredLayer = useMemo(() => {
+		if (!cursor) return null;
+		const hit = pickLayerAtPoint(
+			layers,
+			activeLayerIndex,
+			pixels,
+			width,
+			height,
+			{ x: cursor.x + 0.5, y: cursor.y + 0.5 },
+			cursor
+		);
+		return hit?.layer ?? null;
+	}, [cursor, layers, activeLayerIndex, pixels, width, height]);
+
+	return (
+		<>
+			<span className="shrink-0 text-xs text-[var(--pe-text-secondary)]">
+				Active:{" "}
+				<strong className="font-semibold text-[var(--pe-text)]">
+					{activeLayer?.name ?? "Layer"}
+				</strong>
+			</span>
+			{hoveredLayer && (
+				<>
+					<Divider />
+					<span className="shrink-0 rounded bg-[var(--pe-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--pe-accent-soft-ink)]">
+						Hover: {hoveredLayer.name}
+					</span>
+				</>
+			)}
+			<Hint>Click any pixel on canvas to switch to its layer</Hint>
 		</>
 	);
 };
@@ -199,46 +519,6 @@ const SelectionActions = (): FunctionComponent => {
 		</>
 	);
 };
-
-const Hint = ({ children }: { children: string }): FunctionComponent => (
-	<span className="shrink-0 text-xs text-zinc-500">{children}</span>
-);
-
-const NumberSlider = ({
-	label,
-	value,
-	min,
-	max,
-	suffix = "",
-	width = "w-24",
-	onChange,
-}: {
-	label: string;
-	value: number;
-	min: number;
-	max: number;
-	suffix?: string;
-	width?: string;
-	onChange: (value: number) => void;
-}): FunctionComponent => (
-	<label className="flex shrink-0 items-center gap-2 text-xs text-zinc-400">
-		{label}
-		<input
-			className={`${width} accent-sky-500`}
-			max={max}
-			min={min}
-			type="range"
-			value={value}
-			onChange={(event) => {
-				onChange(Number(event.target.value));
-			}}
-		/>
-		<span className="w-9 tabular-nums text-zinc-200">
-			{value}
-			{suffix}
-		</span>
-	</label>
-);
 
 const BlurOptions = (): FunctionComponent => {
 	const strength = useEditorStore((state) => state.blurStrength);
@@ -323,7 +603,7 @@ const TextOptions = (): FunctionComponent => {
 			<input
 				ref={inputRef}
 				aria-label="Text"
-				className="h-7 w-44 shrink-0 rounded-md border border-zinc-700 bg-zinc-800 px-2 text-xs text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-sky-500"
+				className="h-7 w-44 shrink-0 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 text-xs text-[var(--pe-text)] outline-none placeholder:text-[var(--pe-text-muted)] focus:border-[var(--pe-accent)]"
 				placeholder={placed ? "Type your text…" : "Click the canvas first"}
 				value={textValue}
 				onChange={(event) => {
@@ -343,7 +623,7 @@ const TextOptions = (): FunctionComponent => {
 			/>
 			<select
 				aria-label="Font"
-				className="h-7 shrink-0 rounded-md border border-zinc-700 bg-zinc-800 px-1.5 text-xs text-zinc-100"
+				className={`${inputClass} h-7 shrink-0`}
 				value={style.font}
 				onChange={(event) => {
 					setStyle({ font: event.target.value as TextFont });
@@ -429,10 +709,10 @@ const DitherOptions = (): FunctionComponent => {
 	return (
 		<>
 			<Divider />
-			<label className="flex shrink-0 items-center gap-1.5 text-xs text-zinc-400">
+			<label className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]">
 				Pattern
 				<select
-					className="rounded border border-zinc-700 bg-zinc-800 px-1.5 py-1 text-xs text-zinc-100 outline-none focus:border-sky-500"
+					className={`${inputClass} py-1`}
 					value={ditherPattern}
 					onChange={(event) => {
 						setDitherPattern(event.target.value as DitherPattern);
@@ -480,11 +760,11 @@ const ReplaceOptions = (): FunctionComponent => {
 
 	return (
 		<>
-			<div className="flex shrink-0 items-center gap-1.5 text-xs text-zinc-400">
+			<div className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]">
 				<span>From</span>
 				{replaceFromColor ? (
 					<button
-						className="flex items-center gap-1 rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 font-mono text-[11px] text-zinc-200 hover:border-zinc-500"
+						className="flex items-center gap-1 rounded border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--pe-text)] hover:border-[var(--pe-border-strong)]"
 						title="Click to clear source color"
 						type="button"
 						onClick={() => {
@@ -492,19 +772,19 @@ const ReplaceOptions = (): FunctionComponent => {
 						}}
 					>
 						<span
-							className="swatch-preserve h-3 w-3 rounded-sm border border-zinc-500"
+							className="swatch-preserve h-3 w-3 rounded-sm border border-[var(--pe-border-strong)]"
 							style={{ background: replaceFromColor }}
 						/>
 						{replaceFromColor}
 					</button>
 				) : (
-					<span className="rounded border border-dashed border-zinc-700 px-1.5 py-0.5 text-[11px] text-zinc-500">
+					<span className="rounded border border-dashed border-[var(--pe-border-strong)] px-1.5 py-0.5 text-[11px] text-[var(--pe-text-muted)]">
 						Click canvas
 					</span>
 				)}
 				<span>→</span>
 				<span
-					className="swatch-preserve h-4 w-4 rounded-sm border border-zinc-400"
+					className="swatch-preserve h-4 w-4 rounded-sm border border-[var(--pe-border-strong)]"
 					style={{ background: primaryColor }}
 					title={`Replace with ${primaryColor}`}
 				/>
@@ -518,10 +798,10 @@ const ReplaceOptions = (): FunctionComponent => {
 				width="w-20"
 				onChange={setReplaceTolerance}
 			/>
-			<label className="flex shrink-0 items-center gap-1.5 text-xs text-zinc-400">
+			<label className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]">
 				Scope
 				<select
-					className="rounded border border-zinc-700 bg-zinc-800 px-1.5 py-1 text-xs text-zinc-100 outline-none focus:border-sky-500"
+					className={`${inputClass} py-1`}
 					value={replaceScope}
 					onChange={(event) => {
 						setReplaceScope(event.target.value as ReplaceScope);
@@ -559,7 +839,11 @@ const ReferenceOptions = (): FunctionComponent => {
 	const fitReferenceLayer = useEditorStore((state) => state.fitReferenceLayer);
 	const setLayerOpacity = useEditorStore((state) => state.setLayerOpacity);
 
-	if (!activeLayer || activeLayer.kind !== "reference" || !activeLayer.reference) {
+	if (
+		!activeLayer ||
+		activeLayer.kind !== "reference" ||
+		!activeLayer.reference
+	) {
 		return null;
 	}
 	const reference = activeLayer.reference;
@@ -570,7 +854,7 @@ const ReferenceOptions = (): FunctionComponent => {
 	return (
 		<>
 			<Divider />
-			<span className="shrink-0 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">
+			<span className="shrink-0 rounded bg-[var(--pe-warn-soft)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--pe-warn-ink)]">
 				Reference
 			</span>
 			<NumberSlider
@@ -645,10 +929,17 @@ export const ToolOptions = (): FunctionComponent => {
 			content = (
 				<>
 					<BrushOptions showPixelPerfect />
-					<SymmetryOptions />
 					<Hint>Shift+click: line from last point · Alt: pick color</Hint>
 				</>
 			);
+			break;
+		}
+		case "custom-brush": {
+			content = <CustomBrushOptionsBar />;
+			break;
+		}
+		case "spray": {
+			content = <SprayOptionsBar />;
 			break;
 		}
 		case "dither": {
@@ -656,7 +947,6 @@ export const ToolOptions = (): FunctionComponent => {
 				<>
 					<BrushOptions showPixelPerfect={false} />
 					<DitherOptions />
-					<SymmetryOptions />
 					<Hint>Left: primary · Right: swap · World-aligned pattern</Hint>
 				</>
 			);
@@ -675,7 +965,6 @@ export const ToolOptions = (): FunctionComponent => {
 							onChange={toggleShapeFilled}
 						/>
 					)}
-					<SymmetryOptions />
 					<Hint>
 						{tool === "line"
 							? "Shift: snap angle"
@@ -689,7 +978,6 @@ export const ToolOptions = (): FunctionComponent => {
 			content = (
 				<>
 					<BrushOptions showPixelPerfect={false} />
-					<SymmetryOptions />
 					<Hint>Draw around a shape · it fills when you let go</Hint>
 				</>
 			);
@@ -700,7 +988,6 @@ export const ToolOptions = (): FunctionComponent => {
 				<>
 					<BrushOptions showPixelPerfect={false} />
 					<BlurOptions />
-					<SymmetryOptions />
 					<Hint>Each stroke blurs once · stroke again for more</Hint>
 				</>
 			);
@@ -718,10 +1005,13 @@ export const ToolOptions = (): FunctionComponent => {
 						label="Contiguous"
 						onChange={toggleFillContiguous}
 					/>
-					<SymmetryOptions />
 					<Hint>Off = replace that color everywhere</Hint>
 				</>
 			);
+			break;
+		}
+		case "gradient": {
+			content = <GradientOptionsBar />;
 			break;
 		}
 		case "replace": {
@@ -775,6 +1065,10 @@ export const ToolOptions = (): FunctionComponent => {
 			);
 			break;
 		}
+		case "layer-picker": {
+			content = <LayerPickerOptionsBar />;
+			break;
+		}
 		case "eyedropper": {
 			content = <Hint>Left click: primary · Right click: secondary</Hint>;
 			break;
@@ -788,9 +1082,13 @@ export const ToolOptions = (): FunctionComponent => {
 	}
 
 	return (
-		<div className="flex h-10 shrink-0 items-center gap-3 overflow-x-auto border-b border-zinc-800 bg-zinc-900/80 px-3">
-			<span className="w-28 shrink-0 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-				{label}
+		<div className="editor-scrollbar flex h-10 shrink-0 items-center gap-2.5 overflow-x-auto border-b border-[var(--pe-border-subtle)] bg-[var(--pe-bg-panel-subtle)] px-3">
+			<span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--pe-border)] bg-[var(--pe-bg-panel)] px-2 py-1 text-[11px] font-semibold text-[var(--pe-text)] shadow-2xs">
+				<ToolIcon
+					className="h-3.5 w-3.5 text-[var(--pe-accent)]"
+					tool={tool}
+				/>
+				<span>{label}</span>
 			</span>
 			{content}
 			{activeLayer?.kind === "reference" && <ReferenceOptions />}

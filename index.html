@@ -3,7 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pixel Editor</title>
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      try {
+        var storedScheme = localStorage.getItem("pixel-editor:color-scheme");
+        var meta = document.querySelector('meta[name="color-scheme"]');
+        if (meta && (storedScheme === "light" || storedScheme === "dark")) {
+          meta.content = storedScheme;
+        }
+        var storedTheme = localStorage.getItem("pixel-editor:theme");
+        if (storedTheme && storedTheme !== "system") {
+          document.documentElement.setAttribute("data-theme", storedTheme);
+        }
+      } catch (e) {}
+    </script>
+    <title>Pixelatte — Pixel Art Studio</title>
   </head>
   <body>
     <div id="root"></div>

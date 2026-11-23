@@ -1,8 +1,15 @@
 import type {
 	BrushShape,
 	ColorRampOptions,
+	CustomBrushOptions,
 	DitherPattern,
+	GradientOptions,
+	PerspectiveGuideSettings,
+	RulerGridSettings,
+	SprayOptions,
+	TiledPreviewSettings,
 	Tool,
+	ToolCategory,
 } from "./types";
 
 export const MAX_CANVAS_SIZE = 128;
@@ -42,31 +49,95 @@ export const DEFAULT_PALETTE: Array<string> = [
 	"#ffccaa",
 ];
 
-export type ToolInfo = { id: Tool; label: string; shortcut: string };
+export type ToolInfo = {
+	id: Tool;
+	label: string;
+	shortcut: string;
+	category: ToolCategory;
+	parent?: Tool;
+};
+
+export const TOOL_CATEGORY_LABELS: Record<ToolCategory, string> = {
+	draw: "Draw",
+	color: "Color",
+	shapes: "Shapes & Text",
+	select: "Select",
+	navigate: "Navigate",
+};
 
 export const TOOLS: Array<ToolInfo> = [
-	{ id: "pencil", label: "Pencil", shortcut: "B" },
-	{ id: "eraser", label: "Eraser", shortcut: "E" },
-	{ id: "dither", label: "Dithering brush", shortcut: "P" },
-	{ id: "fill", label: "Fill bucket", shortcut: "G" },
-	{ id: "replace", label: "Magic color replace", shortcut: "C" },
-	{ id: "eyedropper", label: "Eyedropper", shortcut: "I" },
-	{ id: "line", label: "Line", shortcut: "L" },
-	{ id: "rectangle", label: "Rectangle", shortcut: "U" },
-	{ id: "ellipse", label: "Ellipse", shortcut: "O" },
-	{ id: "select-rect", label: "Rectangle select", shortcut: "M" },
-	{ id: "lasso", label: "Lasso select", shortcut: "Q" },
-	{ id: "wand", label: "Magic wand", shortcut: "W" },
-	{ id: "contour", label: "Contour (filled freehand)", shortcut: "D" },
-	{ id: "blur", label: "Blur brush", shortcut: "R" },
-	{ id: "text", label: "Text", shortcut: "T" },
-	{ id: "move", label: "Move", shortcut: "V" },
-	{ id: "hand", label: "Hand (pan)", shortcut: "H" },
+	{ id: "pencil", label: "Pencil", shortcut: "B", category: "draw" },
+	{
+		id: "custom-brush",
+		label: "Custom brush",
+		shortcut: "J",
+		category: "draw",
+		parent: "pencil",
+	},
+	{ id: "eraser", label: "Eraser", shortcut: "E", category: "draw" },
+	{ id: "spray", label: "Spray", shortcut: "S", category: "draw" },
+	{ id: "dither", label: "Dithering brush", shortcut: "P", category: "draw" },
+	{
+		id: "contour",
+		label: "Contour (filled freehand)",
+		shortcut: "D",
+		category: "draw",
+	},
+	{ id: "blur", label: "Blur brush", shortcut: "R", category: "draw" },
+	{ id: "fill", label: "Fill bucket", shortcut: "G", category: "color" },
+	{
+		id: "gradient",
+		label: "Gradient",
+		shortcut: "F",
+		category: "color",
+		parent: "fill",
+	},
+	{
+		id: "replace",
+		label: "Magic color replace",
+		shortcut: "C",
+		category: "color",
+	},
+	{ id: "eyedropper", label: "Eyedropper", shortcut: "I", category: "color" },
+	{ id: "line", label: "Line", shortcut: "L", category: "shapes" },
+	{ id: "rectangle", label: "Rectangle", shortcut: "U", category: "shapes" },
+	{ id: "ellipse", label: "Ellipse", shortcut: "O", category: "shapes" },
+	{ id: "text", label: "Text", shortcut: "T", category: "shapes" },
+	{
+		id: "select-rect",
+		label: "Rectangle select",
+		shortcut: "M",
+		category: "select",
+	},
+	{ id: "lasso", label: "Lasso select", shortcut: "Q", category: "select" },
+	{ id: "wand", label: "Magic wand", shortcut: "W", category: "select" },
+	{ id: "move", label: "Move", shortcut: "V", category: "navigate" },
+	{
+		id: "layer-picker",
+		label: "Layer picker",
+		shortcut: "Y",
+		category: "navigate",
+	},
+	{ id: "hand", label: "Hand (pan)", shortcut: "H", category: "navigate" },
 ];
+
+export const ESSENTIAL_TOOLS: ReadonlySet<Tool> = new Set<Tool>([
+	"pencil",
+	"eraser",
+	"fill",
+	"eyedropper",
+	"line",
+	"rectangle",
+	"select-rect",
+	"move",
+	"hand",
+]);
 
 export const PAINT_TOOLS: ReadonlySet<Tool> = new Set<Tool>([
 	"pencil",
+	"custom-brush",
 	"eraser",
+	"spray",
 	"dither",
 	"line",
 	"rectangle",
@@ -111,3 +182,63 @@ export const DEFAULT_COLOR_RAMP: ColorRampOptions = {
 export const MAX_LAYERS = 32;
 
 export const MAX_FRAMES = 256;
+
+export const DEFAULT_CUSTOM_BRUSH_OPTIONS: CustomBrushOptions = {
+	spacing: 4,
+	scatter: 0,
+	randomFlipX: false,
+	randomFlipY: false,
+	randomRotate: false,
+	colorMode: "original",
+};
+
+export const DEFAULT_SPRAY_OPTIONS: SprayOptions = {
+	radius: 6,
+	density: 35,
+	dotSize: 1,
+	rate: 45,
+	distribution: "uniform",
+};
+
+export const DEFAULT_GRADIENT_OPTIONS: GradientOptions = {
+	type: "linear",
+	dither: "bayer4",
+	steps: 0,
+	regionOnly: true,
+	contiguous: true,
+	reverse: false,
+};
+
+export const DEFAULT_RULER_GRID: RulerGridSettings = {
+	enabled: false,
+	cellWidth: 8,
+	cellHeight: 8,
+	offsetX: 0,
+	offsetY: 0,
+	color: "#38bdf8",
+	opacity: 65,
+	showRuler: true,
+	snapToGrid: false,
+	limitToCell: false,
+};
+
+export const DEFAULT_PERSPECTIVE_GUIDE: PerspectiveGuideSettings = {
+	enabled: false,
+	mode: "1-point",
+	horizonY: null,
+	point1: null,
+	point2: null,
+	point3: null,
+	thirdPointDirection: "bottom",
+	lineCount: 12,
+	opacity: 70,
+	fisheyeRadius: 16,
+	fisheyeCurvature: 65,
+	lockHandles: false,
+};
+
+export const DEFAULT_TILED_PREVIEW: TiledPreviewSettings = {
+	enabled: false,
+	axis: "both",
+	opacity: 75,
+};

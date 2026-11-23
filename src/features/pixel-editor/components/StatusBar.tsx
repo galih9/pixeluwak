@@ -27,8 +27,8 @@ export const StatusBar = (): FunctionComponent => {
 	}, [notice, clearNotice]);
 
 	return (
-		<footer className="flex h-7 shrink-0 items-center gap-4 border-t border-zinc-800 bg-zinc-950 px-3 text-[11px] tabular-nums text-zinc-400">
-			<span className="w-20">
+		<footer className="flex h-7 shrink-0 items-center gap-4 border-t border-[var(--pe-border)] bg-[var(--pe-bg-chrome)] px-3 text-[11px] tabular-nums text-[var(--pe-text-muted)]">
+			<span className="w-20 text-[var(--pe-text-secondary)]">
 				{cursor ? `x ${cursor.x}, y ${cursor.y}` : "—"}
 			</span>
 			<span>
@@ -36,16 +36,20 @@ export const StatusBar = (): FunctionComponent => {
 			</span>
 			<span>Zoom {zoom}×</span>
 			{bounds && (
-				<span>
+				<span className="text-[var(--pe-text-secondary)]">
 					Selection {bounds.width}×{bounds.height}
 					{floating ? ` · moved ${floating.offsetX}, ${floating.offsetY}` : ""}
 				</span>
 			)}
-			{notice && (
-				<span className="ml-auto text-amber-300">{notice.message}</span>
-			)}
-			{!notice && (
-				<span className="ml-auto text-zinc-600">
+			{notice ? (
+				<span
+					className="ml-auto rounded-md bg-[var(--pe-accent-soft)] px-2 py-0.5 font-medium text-[var(--pe-accent-soft-ink)]"
+					role="status"
+				>
+					{notice.message}
+				</span>
+			) : (
+				<span className="ml-auto hidden sm:inline">
 					Autosaved locally · works offline
 				</span>
 			)}

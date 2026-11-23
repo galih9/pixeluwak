@@ -1,43 +1,444 @@
-/* Adapt native browser UI (scrollbars, form controls) to the dark editor theme */
-.pixel-editor-root {
+/* ==========================================================================
+   Pixelatte Studio Theme Tokens & Modern Web Primitives
+   ========================================================================== */
+
+:root {
+	/* Base light & dark palette pairs (used by System, Studio Light, Studio Dark) */
+	--pe-bg-desk-light: #e8e3da;
+	--pe-bg-desk-dark: #14161b;
+	--pe-bg-desk-dot-light: #d1c9bc;
+	--pe-bg-desk-dot-dark: #252935;
+
+	--pe-bg-chrome-light: #f4f0e8;
+	--pe-bg-chrome-dark: #101217;
+	--pe-bg-panel-light: #fcfaf6;
+	--pe-bg-panel-dark: #1a1d24;
+	--pe-bg-panel-subtle-light: #f1ede4;
+	--pe-bg-panel-subtle-dark: #161920;
+
+	--pe-bg-control-light: #efeae0;
+	--pe-bg-control-dark: #242833;
+	--pe-bg-control-hover-light: #e4ddd0;
+	--pe-bg-control-hover-dark: #2f3443;
+	--pe-bg-active-row-light: #e6ecfa;
+	--pe-bg-active-row-dark: #222938;
+
+	--pe-border-light: #dad2c4;
+	--pe-border-dark: #2b303c;
+	--pe-border-subtle-light: #e7e0d4;
+	--pe-border-subtle-dark: #222630;
+	--pe-border-strong-light: #bfb5a4;
+	--pe-border-strong-dark: #3d4456;
+
+	--pe-text-light: #22201c;
+	--pe-text-dark: #eef1f7;
+	--pe-text-secondary-light: #4e4940;
+	--pe-text-secondary-dark: #bcc3d1;
+	--pe-text-muted-light: #787166;
+	--pe-text-muted-dark: #7d8596;
+
+	--pe-accent-light: #3658d6;
+	--pe-accent-dark: #4c82fb;
+	--pe-accent-hover-light: #2b49ba;
+	--pe-accent-hover-dark: #6393ff;
+	--pe-accent-ink-light: #ffffff;
+	--pe-accent-ink-dark: #ffffff;
+	--pe-accent-soft-light: rgb(54 88 214 / 14%);
+	--pe-accent-soft-dark: rgb(76 130 251 / 18%);
+	--pe-accent-soft-ink-light: #2541ab;
+	--pe-accent-soft-ink-dark: #a6c3ff;
+	--pe-accent-ring-light: rgb(54 88 214 / 50%);
+	--pe-accent-ring-dark: rgb(76 130 251 / 55%);
+
+	--pe-warn-soft-light: rgb(217 119 6 / 14%);
+	--pe-warn-soft-dark: rgb(245 158 11 / 16%);
+	--pe-warn-ink-light: #9a5204;
+	--pe-warn-ink-dark: #fcd34d;
+	--pe-danger-light: #c93434;
+	--pe-danger-dark: #ef5350;
+	--pe-danger-soft-light: rgb(201 52 52 / 12%);
+	--pe-danger-soft-dark: rgb(239 83 80 / 16%);
+
+	--pe-scrollbar-thumb-light: #9d9486;
+	--pe-scrollbar-thumb-dark: #6e778b;
+	--pe-scrollbar-track-light: #eee9df;
+	--pe-scrollbar-track-dark: #161920;
+
+	--pe-backdrop-light: rgb(24 22 18 / 38%);
+	--pe-backdrop-dark: rgb(7 9 13 / 64%);
+
+	--pe-shadow-sm-color-light: rgb(34 32 28 / 7%);
+	--pe-shadow-sm-color-dark: rgb(0 0 0 / 35%);
+	--pe-shadow-modal-color-light: rgb(34 32 28 / 18%);
+	--pe-shadow-modal-color-dark: rgb(0 0 0 / 55%);
+	--pe-shadow-modal-ring-light: rgb(34 32 28 / 8%);
+	--pe-shadow-modal-ring-dark: rgb(0 0 0 / 35%);
+
+	/* Default (light) assignments + media fallback for browsers without light-dark() */
+	--pe-bg-desk: var(--pe-bg-desk-light);
+	--pe-bg-desk-dot: var(--pe-bg-desk-dot-light);
+	--pe-bg-chrome: var(--pe-bg-chrome-light);
+	--pe-bg-panel: var(--pe-bg-panel-light);
+	--pe-bg-panel-subtle: var(--pe-bg-panel-subtle-light);
+	--pe-bg-control: var(--pe-bg-control-light);
+	--pe-bg-control-hover: var(--pe-bg-control-hover-light);
+	--pe-bg-active-row: var(--pe-bg-active-row-light);
+	--pe-border: var(--pe-border-light);
+	--pe-border-subtle: var(--pe-border-subtle-light);
+	--pe-border-strong: var(--pe-border-strong-light);
+	--pe-text: var(--pe-text-light);
+	--pe-text-secondary: var(--pe-text-secondary-light);
+	--pe-text-muted: var(--pe-text-muted-light);
+	--pe-accent: var(--pe-accent-light);
+	--pe-accent-hover: var(--pe-accent-hover-light);
+	--pe-accent-ink: var(--pe-accent-ink-light);
+	--pe-accent-soft: var(--pe-accent-soft-light);
+	--pe-accent-soft-ink: var(--pe-accent-soft-ink-light);
+	--pe-accent-ring: var(--pe-accent-ring-light);
+	--pe-warn-soft: var(--pe-warn-soft-light);
+	--pe-warn-ink: var(--pe-warn-ink-light);
+	--pe-danger: var(--pe-danger-light);
+	--pe-danger-soft: var(--pe-danger-soft-light);
+	--pe-scrollbar-thumb: var(--pe-scrollbar-thumb-light);
+	--pe-scrollbar-track: var(--pe-scrollbar-track-light);
+	--pe-backdrop: var(--pe-backdrop-light);
+	--pe-shadow-sm-color: var(--pe-shadow-sm-color-light);
+	--pe-shadow-modal-color: var(--pe-shadow-modal-color-light);
+	--pe-shadow-modal-ring: var(--pe-shadow-modal-ring-light);
+
+	@media (prefers-color-scheme: dark) {
+		--pe-bg-desk: var(--pe-bg-desk-dark);
+		--pe-bg-desk-dot: var(--pe-bg-desk-dot-dark);
+		--pe-bg-chrome: var(--pe-bg-chrome-dark);
+		--pe-bg-panel: var(--pe-bg-panel-dark);
+		--pe-bg-panel-subtle: var(--pe-bg-panel-subtle-dark);
+		--pe-bg-control: var(--pe-bg-control-dark);
+		--pe-bg-control-hover: var(--pe-bg-control-hover-dark);
+		--pe-bg-active-row: var(--pe-bg-active-row-dark);
+		--pe-border: var(--pe-border-dark);
+		--pe-border-subtle: var(--pe-border-subtle-dark);
+		--pe-border-strong: var(--pe-border-strong-dark);
+		--pe-text: var(--pe-text-dark);
+		--pe-text-secondary: var(--pe-text-secondary-dark);
+		--pe-text-muted: var(--pe-text-muted-dark);
+		--pe-accent: var(--pe-accent-dark);
+		--pe-accent-hover: var(--pe-accent-hover-dark);
+		--pe-accent-ink: var(--pe-accent-ink-dark);
+		--pe-accent-soft: var(--pe-accent-soft-dark);
+		--pe-accent-soft-ink: var(--pe-accent-soft-ink-dark);
+		--pe-accent-ring: var(--pe-accent-ring-dark);
+		--pe-warn-soft: var(--pe-warn-soft-dark);
+		--pe-warn-ink: var(--pe-warn-ink-dark);
+		--pe-danger: var(--pe-danger-dark);
+		--pe-danger-soft: var(--pe-danger-soft-dark);
+		--pe-scrollbar-thumb: var(--pe-scrollbar-thumb-dark);
+		--pe-scrollbar-track: var(--pe-scrollbar-track-dark);
+		--pe-backdrop: var(--pe-backdrop-dark);
+		--pe-shadow-sm-color: var(--pe-shadow-sm-color-dark);
+		--pe-shadow-modal-color: var(--pe-shadow-modal-color-dark);
+		--pe-shadow-modal-ring: var(--pe-shadow-modal-ring-dark);
+	}
+
+	@supports (color: light-dark(white, black)) {
+		--pe-bg-desk: light-dark(var(--pe-bg-desk-light), var(--pe-bg-desk-dark));
+		--pe-bg-desk-dot: light-dark(var(--pe-bg-desk-dot-light), var(--pe-bg-desk-dot-dark));
+		--pe-bg-chrome: light-dark(var(--pe-bg-chrome-light), var(--pe-bg-chrome-dark));
+		--pe-bg-panel: light-dark(var(--pe-bg-panel-light), var(--pe-bg-panel-dark));
+		--pe-bg-panel-subtle: light-dark(var(--pe-bg-panel-subtle-light), var(--pe-bg-panel-subtle-dark));
+		--pe-bg-control: light-dark(var(--pe-bg-control-light), var(--pe-bg-control-dark));
+		--pe-bg-control-hover: light-dark(var(--pe-bg-control-hover-light), var(--pe-bg-control-hover-dark));
+		--pe-bg-active-row: light-dark(var(--pe-bg-active-row-light), var(--pe-bg-active-row-dark));
+		--pe-border: light-dark(var(--pe-border-light), var(--pe-border-dark));
+		--pe-border-subtle: light-dark(var(--pe-border-subtle-light), var(--pe-border-subtle-dark));
+		--pe-border-strong: light-dark(var(--pe-border-strong-light), var(--pe-border-strong-dark));
+		--pe-text: light-dark(var(--pe-text-light), var(--pe-text-dark));
+		--pe-text-secondary: light-dark(var(--pe-text-secondary-light), var(--pe-text-secondary-dark));
+		--pe-text-muted: light-dark(var(--pe-text-muted-light), var(--pe-text-muted-dark));
+		--pe-accent: light-dark(var(--pe-accent-light), var(--pe-accent-dark));
+		--pe-accent-hover: light-dark(var(--pe-accent-hover-light), var(--pe-accent-hover-dark));
+		--pe-accent-ink: light-dark(var(--pe-accent-ink-light), var(--pe-accent-ink-dark));
+		--pe-accent-soft: light-dark(var(--pe-accent-soft-light), var(--pe-accent-soft-dark));
+		--pe-accent-soft-ink: light-dark(var(--pe-accent-soft-ink-light), var(--pe-accent-soft-ink-dark));
+		--pe-accent-ring: light-dark(var(--pe-accent-ring-light), var(--pe-accent-ring-dark));
+		--pe-warn-soft: light-dark(var(--pe-warn-soft-light), var(--pe-warn-soft-dark));
+		--pe-warn-ink: light-dark(var(--pe-warn-ink-light), var(--pe-warn-ink-dark));
+		--pe-danger: light-dark(var(--pe-danger-light), var(--pe-danger-dark));
+		--pe-danger-soft: light-dark(var(--pe-danger-soft-light), var(--pe-danger-soft-dark));
+		--pe-scrollbar-thumb: light-dark(var(--pe-scrollbar-thumb-light), var(--pe-scrollbar-thumb-dark));
+		--pe-scrollbar-track: light-dark(var(--pe-scrollbar-track-light), var(--pe-scrollbar-track-dark));
+		--pe-backdrop: light-dark(var(--pe-backdrop-light), var(--pe-backdrop-dark));
+		--pe-shadow-sm-color: light-dark(var(--pe-shadow-sm-color-light), var(--pe-shadow-sm-color-dark));
+		--pe-shadow-modal-color: light-dark(var(--pe-shadow-modal-color-light), var(--pe-shadow-modal-color-dark));
+		--pe-shadow-modal-ring: light-dark(var(--pe-shadow-modal-ring-light), var(--pe-shadow-modal-ring-dark));
+	}
+
+	--pe-shadow-sm: 0 1px 2px var(--pe-shadow-sm-color);
+	--pe-shadow-modal: 0 24px 56px var(--pe-shadow-modal-color), 0 2px 10px var(--pe-shadow-modal-ring);
+
+	/* Follow system preference by default; mirror <meta name="color-scheme"> overrides */
+	color-scheme: light dark;
+
+	&:has(> head > meta[name="color-scheme"][content="dark"]) {
+		color-scheme: dark;
+	}
+	&:has(> head > meta[name="color-scheme"][content="light"]) {
+		color-scheme: light;
+	}
+}
+
+html {
+	accent-color: var(--pe-accent);
+	background-color: var(--pe-bg-desk);
+	color: var(--pe-text);
+}
+
+/* Explicit theme presets */
+:root[data-theme="light"] {
+	color-scheme: light;
+
+	@supports not (color: light-dark(white, black)) {
+		--pe-bg-desk: var(--pe-bg-desk-light);
+		--pe-bg-desk-dot: var(--pe-bg-desk-dot-light);
+		--pe-bg-chrome: var(--pe-bg-chrome-light);
+		--pe-bg-panel: var(--pe-bg-panel-light);
+		--pe-bg-panel-subtle: var(--pe-bg-panel-subtle-light);
+		--pe-bg-control: var(--pe-bg-control-light);
+		--pe-bg-control-hover: var(--pe-bg-control-hover-light);
+		--pe-bg-active-row: var(--pe-bg-active-row-light);
+		--pe-border: var(--pe-border-light);
+		--pe-border-subtle: var(--pe-border-subtle-light);
+		--pe-border-strong: var(--pe-border-strong-light);
+		--pe-text: var(--pe-text-light);
+		--pe-text-secondary: var(--pe-text-secondary-light);
+		--pe-text-muted: var(--pe-text-muted-light);
+		--pe-accent: var(--pe-accent-light);
+		--pe-accent-hover: var(--pe-accent-hover-light);
+		--pe-accent-ink: var(--pe-accent-ink-light);
+		--pe-accent-soft: var(--pe-accent-soft-light);
+		--pe-accent-soft-ink: var(--pe-accent-soft-ink-light);
+		--pe-accent-ring: var(--pe-accent-ring-light);
+		--pe-warn-soft: var(--pe-warn-soft-light);
+		--pe-warn-ink: var(--pe-warn-ink-light);
+		--pe-danger: var(--pe-danger-light);
+		--pe-danger-soft: var(--pe-danger-soft-light);
+		--pe-scrollbar-thumb: var(--pe-scrollbar-thumb-light);
+		--pe-scrollbar-track: var(--pe-scrollbar-track-light);
+		--pe-backdrop: var(--pe-backdrop-light);
+		--pe-shadow-sm-color: var(--pe-shadow-sm-color-light);
+		--pe-shadow-modal-color: var(--pe-shadow-modal-color-light);
+		--pe-shadow-modal-ring: var(--pe-shadow-modal-ring-light);
+	}
+}
+
+:root[data-theme="dark"] {
 	color-scheme: dark;
+
+	@supports not (color: light-dark(white, black)) {
+		--pe-bg-desk: var(--pe-bg-desk-dark);
+		--pe-bg-desk-dot: var(--pe-bg-desk-dot-dark);
+		--pe-bg-chrome: var(--pe-bg-chrome-dark);
+		--pe-bg-panel: var(--pe-bg-panel-dark);
+		--pe-bg-panel-subtle: var(--pe-bg-panel-subtle-dark);
+		--pe-bg-control: var(--pe-bg-control-dark);
+		--pe-bg-control-hover: var(--pe-bg-control-hover-dark);
+		--pe-bg-active-row: var(--pe-bg-active-row-dark);
+		--pe-border: var(--pe-border-dark);
+		--pe-border-subtle: var(--pe-border-subtle-dark);
+		--pe-border-strong: var(--pe-border-strong-dark);
+		--pe-text: var(--pe-text-dark);
+		--pe-text-secondary: var(--pe-text-secondary-dark);
+		--pe-text-muted: var(--pe-text-muted-dark);
+		--pe-accent: var(--pe-accent-dark);
+		--pe-accent-hover: var(--pe-accent-hover-dark);
+		--pe-accent-ink: var(--pe-accent-ink-dark);
+		--pe-accent-soft: var(--pe-accent-soft-dark);
+		--pe-accent-soft-ink: var(--pe-accent-soft-ink-dark);
+		--pe-accent-ring: var(--pe-accent-ring-dark);
+		--pe-warn-soft: var(--pe-warn-soft-dark);
+		--pe-warn-ink: var(--pe-warn-ink-dark);
+		--pe-danger: var(--pe-danger-dark);
+		--pe-danger-soft: var(--pe-danger-soft-dark);
+		--pe-scrollbar-thumb: var(--pe-scrollbar-thumb-dark);
+		--pe-scrollbar-track: var(--pe-scrollbar-track-dark);
+		--pe-backdrop: var(--pe-backdrop-dark);
+		--pe-shadow-sm-color: var(--pe-shadow-sm-color-dark);
+		--pe-shadow-modal-color: var(--pe-shadow-modal-color-dark);
+		--pe-shadow-modal-ring: var(--pe-shadow-modal-ring-dark);
+	}
 }
 
-/* Stylized, unobtrusive scrollbars that blend with the zinc-900 panels */
+:root[data-theme="espresso"] {
+	color-scheme: dark;
+	--pe-bg-desk: #1a1512;
+	--pe-bg-desk-dot: #2f2620;
+	--pe-bg-chrome: #14100d;
+	--pe-bg-panel: #241d18;
+	--pe-bg-panel-subtle: #1d1713;
+	--pe-bg-control: #312720;
+	--pe-bg-control-hover: #3d3128;
+	--pe-bg-active-row: #36291f;
+	--pe-border: #3d3129;
+	--pe-border-subtle: #2e241e;
+	--pe-border-strong: #59473b;
+	--pe-text: #f5ece3;
+	--pe-text-secondary: #d4c3b3;
+	--pe-text-muted: #988676;
+	--pe-accent: #e59348;
+	--pe-accent-hover: #f0a45e;
+	--pe-accent-ink: #1a120d;
+	--pe-accent-soft: rgb(229 147 72 / 18%);
+	--pe-accent-soft-ink: #f6c08a;
+	--pe-accent-ring: rgb(229 147 72 / 55%);
+	--pe-warn-soft: rgb(245 158 11 / 18%);
+	--pe-warn-ink: #fcd34d;
+	--pe-danger: #f06e6e;
+	--pe-danger-soft: rgb(240 110 110 / 18%);
+	--pe-scrollbar-thumb: #847060;
+	--pe-scrollbar-track: #1b1511;
+	--pe-backdrop: rgb(12 8 6 / 68%);
+	--pe-shadow-sm: 0 1px 2px rgb(0 0 0 / 38%);
+	--pe-shadow-modal: 0 24px 56px rgb(0 0 0 / 60%), 0 2px 10px rgb(0 0 0 / 38%);
+}
+
+:root[data-theme="matcha"] {
+	color-scheme: light;
+	--pe-bg-desk: #dde4cf;
+	--pe-bg-desk-dot: #c3cdb0;
+	--pe-bg-chrome: #e8eedc;
+	--pe-bg-panel: #f6f8f1;
+	--pe-bg-panel-subtle: #edf2e3;
+	--pe-bg-control: #e4ebd8;
+	--pe-bg-control-hover: #d8e2c9;
+	--pe-bg-active-row: #dce9d8;
+	--pe-border: #c9d4b8;
+	--pe-border-subtle: #dce4cd;
+	--pe-border-strong: #a7b692;
+	--pe-text: #1f2d21;
+	--pe-text-secondary: #435645;
+	--pe-text-muted: #6c7f6d;
+	--pe-accent: #3b7a47;
+	--pe-accent-hover: #2f6539;
+	--pe-accent-ink: #ffffff;
+	--pe-accent-soft: rgb(59 122 71 / 14%);
+	--pe-accent-soft-ink: #255730;
+	--pe-accent-ring: rgb(59 122 71 / 48%);
+	--pe-warn-soft: rgb(180 115 10 / 15%);
+	--pe-warn-ink: #8a5305;
+	--pe-danger: #bd3b3b;
+	--pe-danger-soft: rgb(189 59 59 / 12%);
+	--pe-scrollbar-thumb: #7b8d79;
+	--pe-scrollbar-track: #e6ecd9;
+	--pe-backdrop: rgb(25 36 26 / 38%);
+	--pe-shadow-sm: 0 1px 2px rgb(31 45 33 / 8%);
+	--pe-shadow-modal: 0 22px 50px rgb(31 45 33 / 20%), 0 2px 8px rgb(31 45 33 / 8%);
+}
+
+:root[data-theme="gameboy"] {
+	color-scheme: light;
+	--pe-bg-desk: #c4cba8;
+	--pe-bg-desk-dot: #abb48d;
+	--pe-bg-chrome: #cfd5b6;
+	--pe-bg-panel: #e7ebd6;
+	--pe-bg-panel-subtle: #dce1c7;
+	--pe-bg-control: #d5dcc0;
+	--pe-bg-control-hover: #c6cfad;
+	--pe-bg-active-row: #cbd6b2;
+	--pe-border: #aeb891;
+	--pe-border-subtle: #c5ceb0;
+	--pe-border-strong: #879468;
+	--pe-text: #1b2c12;
+	--pe-text-secondary: #374d2a;
+	--pe-text-muted: #5a6f4b;
+	--pe-accent: #2f5220;
+	--pe-accent-hover: #213c15;
+	--pe-accent-ink: #edf2da;
+	--pe-accent-soft: rgb(47 82 32 / 15%);
+	--pe-accent-soft-ink: #1e3b12;
+	--pe-accent-ring: rgb(47 82 32 / 52%);
+	--pe-warn-soft: rgb(138 100 16 / 16%);
+	--pe-warn-ink: #644606;
+	--pe-danger: #993333;
+	--pe-danger-soft: rgb(153 51 51 / 14%);
+	--pe-scrollbar-thumb: #6f7c58;
+	--pe-scrollbar-track: #d4dac0;
+	--pe-backdrop: rgb(20 32 14 / 42%);
+	--pe-shadow-sm: 0 1px 2px rgb(27 44 18 / 10%);
+	--pe-shadow-modal: 0 22px 50px rgb(27 44 18 / 24%), 0 2px 8px rgb(27 44 18 / 10%);
+}
+
+:root[data-theme="midnight"] {
+	color-scheme: dark;
+	--pe-bg-desk: #13111c;
+	--pe-bg-desk-dot: #26203a;
+	--pe-bg-chrome: #0e0c16;
+	--pe-bg-panel: #1b1727;
+	--pe-bg-panel-subtle: #161321;
+	--pe-bg-control: #272138;
+	--pe-bg-control-hover: #332b49;
+	--pe-bg-active-row: #31233e;
+	--pe-border: #332b48;
+	--pe-border-subtle: #251f36;
+	--pe-border-strong: #4e426c;
+	--pe-text: #f5eefb;
+	--pe-text-secondary: #cdc2df;
+	--pe-text-muted: #8f82a8;
+	--pe-accent: #e86ca8;
+	--pe-accent-hover: #f384ba;
+	--pe-accent-ink: #1b0a14;
+	--pe-accent-soft: rgb(232 108 168 / 18%);
+	--pe-accent-soft-ink: #f9add2;
+	--pe-accent-ring: rgb(232 108 168 / 55%);
+	--pe-warn-soft: rgb(251 191 36 / 16%);
+	--pe-warn-ink: #fde68a;
+	--pe-danger: #fb7185;
+	--pe-danger-soft: rgb(251 113 133 / 18%);
+	--pe-scrollbar-thumb: #7b6c99;
+	--pe-scrollbar-track: #14111d;
+	--pe-backdrop: rgb(8 6 14 / 68%);
+	--pe-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+	--pe-shadow-modal: 0 24px 56px rgb(0 0 0 / 60%), 0 2px 10px rgb(0 0 0 / 40%);
+}
+
+/* ==========================================================================
+   Scrollbars (Standard scrollbar-color + WebKit Fallback)
+   ========================================================================== */
+
 .editor-scrollbar {
-	--scrollbar-thumb: #71717a;
-	--scrollbar-track: #18181b;
-
-	scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-	scrollbar-width: auto;
+	scrollbar-color: var(--pe-scrollbar-thumb) var(--pe-scrollbar-track);
+	scrollbar-width: thin;
 }
 
-/* Legacy fallback for older WebKit/Blink browsers without standard scrollbar-color */
 @supports not (scrollbar-color: auto) {
+	.editor-scrollbar {
+		scrollbar-width: auto;
+	}
+
 	.editor-scrollbar::-webkit-scrollbar {
 		width: 10px;
 		height: 10px;
 	}
 
 	.editor-scrollbar::-webkit-scrollbar-thumb {
-		background: var(--scrollbar-thumb);
-		border: 2px solid var(--scrollbar-track);
+		background: var(--pe-scrollbar-thumb);
+		border: 2px solid var(--pe-scrollbar-track);
 		border-radius: 9999px;
 	}
 
 	.editor-scrollbar::-webkit-scrollbar-track {
-		background: var(--scrollbar-track);
+		background: var(--pe-scrollbar-track);
 	}
 }
 
-/* Subtle dotted backdrop behind the canvas */
+/* ==========================================================================
+   Canvas Workspace & Checkerboard
+   ========================================================================== */
+
 .canvas-backdrop {
-	background-color: #18181b;
-	background-image: radial-gradient(#27272a 1px, transparent 1px);
+	background-color: var(--pe-bg-desk);
+	background-image: radial-gradient(var(--pe-bg-desk-dot) 1px, transparent 1px);
 	background-size: 16px 16px;
 }
 
-/* Transparent-pixel checkerboard for the preview thumbnails */
 .preview-checker {
 	background-color: #a1a1aa;
 	background-image:
@@ -56,25 +457,13 @@
 /* Make the react-colorful picker fill the side panel */
 .pixel-color-picker .react-colorful {
 	width: 100%;
-	height: 160px;
+	height: 148px;
 }
 .pixel-color-picker .react-colorful__saturation {
-	border-radius: 6px 6px 0 0;
+	border-radius: 8px 8px 0 0;
 }
 .pixel-color-picker .react-colorful__last-control {
-	border-radius: 0 0 6px 6px;
-}
-
-/* Native <dialog> modal backdrop and scroll-chaining guard */
-dialog.editor-modal:modal {
-	margin: auto;
-	overscroll-behavior: contain;
-}
-
-dialog.editor-modal::backdrop {
-	background: rgb(0 0 0 / 60%);
-	overflow: hidden;
-	overscroll-behavior: contain;
+	border-radius: 0 0 8px 8px;
 }
 
 /* Preserve color swatch colors in Forced Colors Mode */
@@ -82,13 +471,39 @@ dialog.editor-modal::backdrop {
 	forced-color-adjust: none;
 }
 
-/* Viewport-aware anchored popovers using native CSS Anchor Positioning where supported */
+/* ==========================================================================
+   Native <dialog> Modal & Popover Styling
+   ========================================================================== */
+
+dialog.editor-modal[open] {
+	display: flex;
+	flex-direction: column;
+}
+
+dialog.editor-modal:modal {
+	margin: auto;
+	overscroll-behavior: contain;
+	box-shadow: var(--pe-shadow-modal);
+}
+
+dialog.editor-modal::backdrop {
+	background: var(--pe-backdrop);
+	backdrop-filter: blur(4px);
+	overflow: hidden;
+	overscroll-behavior: contain;
+}
+
 .editor-popover[popover] {
 	inset: auto;
 	margin: 0;
-	max-height: min(22rem, 75dvh);
+	max-height: min(24rem, 75dvh);
 	overflow: auto;
 	overscroll-behavior: contain;
+	box-shadow: var(--pe-shadow-modal);
+}
+
+.editor-popover[popover]:is(:popover-open, .\:popover-open) {
+	display: block;
 }
 
 @supports (position-area: block-end) {
@@ -105,4 +520,281 @@ dialog.editor-modal::backdrop {
 		inset-inline-start: 50%;
 		transform: translate(-50%, -50%);
 	}
+}
+
+.editor-side-popover[popover] {
+	max-height: min(26rem, 80dvh);
+	overflow: auto;
+	overscroll-behavior: contain;
+	box-shadow: var(--pe-shadow-modal);
+}
+
+.editor-side-popover[popover]:is(:popover-open, .\:popover-open) {
+	display: block;
+}
+
+@supports (position-area: inline-end) {
+	.editor-side-popover[popover] {
+		inset: auto;
+		margin: 0;
+		margin-inline-start: 6px;
+		position-area: inline-end span-block-end;
+		position-try-fallbacks: flip-inline, flip-block, flip-inline flip-block;
+	}
+}
+
+@supports not (position-area: inline-end) {
+	.editor-side-popover[popover] {
+		position: fixed;
+		inset: auto;
+		margin: 0;
+	}
+}
+
+.pe-corner-badge-btn {
+	position: absolute;
+	right: -1px;
+	bottom: -1px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 0.9rem;
+	height: 0.9rem;
+	border-radius: 0.25rem;
+	border: 1px solid var(--pe-border-strong);
+	background-color: var(--pe-bg-panel);
+	color: var(--pe-text-secondary);
+	cursor: pointer;
+	box-shadow: var(--pe-shadow-sm);
+}
+
+@media (hover: hover) {
+	.pe-corner-badge-btn:hover {
+		background-color: var(--pe-bg-control-hover);
+		color: var(--pe-text);
+		border-color: var(--pe-accent);
+	}
+}
+
+.pe-corner-badge-btn:focus-visible {
+	outline: 2px solid var(--pe-accent);
+	outline-offset: 1px;
+}
+
+/* ==========================================================================
+   Accessible Native Switch Control + Fallback
+   ========================================================================== */
+
+.pe-switch {
+	accent-color: var(--pe-accent);
+	margin: 0;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.pe-switch:focus-visible {
+	outline: 3px solid var(--pe-accent);
+	outline-offset: 3px;
+}
+
+.pe-switch:disabled {
+	cursor: not-allowed;
+	opacity: 0.45;
+}
+
+.pe-switch[data-switch-fallback] {
+	appearance: none;
+	-webkit-appearance: none;
+	position: relative;
+	display: inline-block;
+	inline-size: 2.25rem;
+	block-size: 1.25rem;
+	border-radius: 9999px;
+	border: 1px solid var(--pe-border-strong);
+	background-color: var(--pe-bg-control);
+	vertical-align: middle;
+}
+
+.pe-switch[data-switch-fallback]::before {
+	content: "";
+	position: absolute;
+	inset-block-start: 2px;
+	inset-inline-start: 2px;
+	inline-size: 0.875rem;
+	block-size: 0.875rem;
+	border-radius: 9999px;
+	background-color: var(--pe-text-secondary);
+}
+
+.pe-switch[data-switch-fallback]:checked {
+	border-color: var(--pe-accent);
+	background-color: var(--pe-accent);
+}
+
+.pe-switch[data-switch-fallback]:checked::before {
+	transform: translateX(1rem);
+	background-color: var(--pe-accent-ink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.pe-switch[data-switch-fallback] {
+		transition: background-color 150ms ease, border-color 150ms ease;
+	}
+	.pe-switch[data-switch-fallback]::before {
+		transition: transform 150ms ease, background-color 150ms ease;
+	}
+}
+
+@media (forced-colors: active) {
+	.pe-switch[data-switch-fallback] {
+		border-color: ButtonText;
+		background-color: Canvas;
+	}
+	.pe-switch[data-switch-fallback]::before {
+		background-color: ButtonText;
+	}
+	.pe-switch[data-switch-fallback]:checked {
+		border-color: Highlight;
+		background-color: Highlight;
+	}
+	.pe-switch[data-switch-fallback]:checked::before {
+		background-color: HighlightText;
+	}
+}
+
+/* ==========================================================================
+   Accessible Tabs (Underline via Border + Grid Overlay Panels)
+   ========================================================================== */
+
+.pe-tablist {
+	display: flex;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	gap: 0.25rem;
+	border-bottom: 1px solid var(--pe-border);
+	scrollbar-width: none;
+}
+
+.pe-tablist::-webkit-scrollbar {
+	display: none;
+}
+
+.pe-tab {
+	position: relative;
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	padding: 0.65rem 0.85rem;
+	font-size: 0.78rem;
+	font-weight: 500;
+	color: var(--pe-text-muted);
+	white-space: nowrap;
+	border-radius: 0.375rem 0.375rem 0 0;
+	cursor: pointer;
+}
+
+@media (hover: hover) {
+	.pe-tab:hover {
+		color: var(--pe-text);
+		background-color: var(--pe-bg-control);
+	}
+}
+
+.pe-tab:focus-visible {
+	outline: 2px solid var(--pe-accent);
+	outline-offset: -2px;
+}
+
+.pe-tab[aria-selected="true"] {
+	color: var(--pe-text);
+}
+
+.pe-tab[aria-selected="true"]::after {
+	content: "";
+	position: absolute;
+	inset: auto 0.25rem 0;
+	border-block-end: 2px solid var(--pe-accent);
+}
+
+.pe-tab-panels {
+	display: grid;
+}
+
+.pe-tab-panel {
+	grid-area: 1 / 1;
+	min-width: 0;
+}
+
+/* ==========================================================================
+   Toolbar Buttons & Tactile Shortcut Keycaps
+   ========================================================================== */
+
+.pe-tool-btn {
+	min-inline-size: 2.25rem;
+	min-block-size: 2.25rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 0.5rem;
+	border: 1px solid transparent;
+	color: var(--pe-text-secondary);
+	cursor: pointer;
+}
+
+@media (pointer: coarse) {
+	.pe-tool-btn {
+		min-inline-size: 2.625rem;
+		min-block-size: 2.625rem;
+	}
+}
+
+@media (hover: hover) {
+	.pe-tool-btn:hover:not([aria-pressed="true"]):not(:disabled) {
+		background-color: var(--pe-bg-control-hover);
+		color: var(--pe-text);
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.pe-tool-btn {
+		transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, transform 80ms ease;
+	}
+}
+
+.pe-tool-btn[aria-pressed="true"] {
+	background-color: var(--pe-accent);
+	color: var(--pe-accent-ink);
+	border-color: var(--pe-accent-ring);
+	box-shadow: var(--pe-shadow-sm);
+}
+
+.pe-tool-btn:focus-visible {
+	outline: 2px solid var(--pe-accent);
+	outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+	.pe-tool-btn[aria-pressed="true"] {
+		background-color: Highlight;
+		color: HighlightText;
+		border-color: ButtonText;
+	}
+}
+
+.pe-kbd {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.35rem;
+	padding: 0.125rem 0.375rem;
+	border-radius: 0.3125rem;
+	border: 1px solid var(--pe-border-strong);
+	border-bottom-width: 2px;
+	background-color: var(--pe-bg-control);
+	color: var(--pe-text-secondary);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.65rem;
+	font-weight: 600;
+	line-height: 1.1;
 }

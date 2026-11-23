@@ -3,7 +3,7 @@ import type { FunctionComponent } from "../../../common/types";
 import { sequenceFor } from "../lib/animation";
 import { subscribeFrames } from "../lib/liveView";
 import { framePixels, useEditorStore } from "../store/editorStore";
-import { Toggle } from "./ui";
+import { PanelCard, Toggle } from "./ui";
 
 const BOX = 176;
 
@@ -80,12 +80,11 @@ export const PreviewPanel = (): FunctionComponent => {
 		tags.find((candidate) => candidate.id === playTag)?.name ?? "all frames";
 
 	return (
-		<section className="p-3">
-			<div className="mb-2 flex items-center justify-between">
-				<h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-					Preview
-				</h2>
-				{frameCount > 1 && (
+		<PanelCard
+			collapsible
+			title="Preview"
+			actions={
+				frameCount > 1 ? (
 					<Toggle
 						checked={loop}
 						label="Animate"
@@ -93,10 +92,11 @@ export const PreviewPanel = (): FunctionComponent => {
 							setLoop(!loop);
 						}}
 					/>
-				)}
-			</div>
+				) : undefined
+			}
+		>
 			<div className="flex flex-wrap items-end gap-3">
-				<div className="preview-checker flex items-center justify-center rounded border border-zinc-700 p-1">
+				<div className="preview-checker flex items-center justify-center rounded-lg border border-[var(--pe-border)] p-1">
 					<canvas
 						ref={largeRef}
 						style={{
@@ -108,7 +108,7 @@ export const PreviewPanel = (): FunctionComponent => {
 				</div>
 				{scale > 1 && (
 					<div
-						className="preview-checker rounded border border-zinc-700 p-1"
+						className="preview-checker rounded-lg border border-[var(--pe-border)] p-1"
 						title="Actual size"
 					>
 						<canvas
@@ -118,11 +118,11 @@ export const PreviewPanel = (): FunctionComponent => {
 					</div>
 				)}
 			</div>
-			<p className="mt-2 text-[11px] text-zinc-500">
+			<p className="mt-2 text-[11px] text-[var(--pe-text-muted)]">
 				{width}×{height}px ·{" "}
 				{scale > 1 ? `preview ${scale}× and 1×` : "actual size"}
 				{animate && ` · looping ${loopName}`}
 			</p>
-		</section>
+		</PanelCard>
 	);
 };

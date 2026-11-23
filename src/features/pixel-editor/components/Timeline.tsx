@@ -37,11 +37,14 @@ import {
 import { importReferenceImage } from "../lib/files";
 import { subscribeFrames } from "../lib/liveView";
 import { useEditorStore } from "../store/editorStore";
+import { useUiSettingsStore } from "../store/uiSettingsStore";
 import type { FrameTag, PixelBuffer, TagDirection } from "../types";
 import { Divider, IconButton, Modal, TextButton } from "./ui";
 
 const COLUMN = 34;
+const FRAME_CARD_COLUMN = 58;
 const THUMB = 26;
+const FRAME_CARD_THUMB = 36;
 const ROW = 26;
 const NAMES = 236;
 const TAG_LANE = 16;
@@ -102,7 +105,13 @@ const layerPropsKey = (state: ReturnType<typeof getState>): string =>
 		.map((layer) => `${layer.id}:${layer.visible ? 1 : 0}:${layer.opacity}`)
 		.join(",");
 
-const FrameThumb = ({ index }: { index: number }): FunctionComponent => {
+const FrameThumb = ({
+	index,
+	size = THUMB,
+}: {
+	index: number;
+	size?: number;
+}): FunctionComponent => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const width = useEditorStore((state) => state.width);
 	const height = useEditorStore((state) => state.height);
@@ -138,11 +147,11 @@ const FrameThumb = ({ index }: { index: number }): FunctionComponent => {
 		return undefined;
 	}, [isCurrent, frame, layersKey, width, height]);
 
-	const scale = THUMB / Math.max(width, height);
+	const scale = size / Math.max(width, height);
 	return (
 		<div
-			className="preview-checker flex items-center justify-center overflow-hidden rounded-sm"
-			style={{ width: THUMB, height: THUMB }}
+			className="preview-checker flex items-center justify-center overflow-hidden rounded-sm border border-[var(--pe-border)]"
+			style={{ width: size, height: size }}
 		>
 			<canvas
 				ref={canvasRef}
@@ -193,7 +202,7 @@ const TagDialog = ({
 		onClose();
 	};
 	const inputClass =
-		"rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-zinc-100 outline-none focus:border-sky-500";
+		"rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]";
 
 	return (
 		<Modal
@@ -201,6 +210,7 @@ const TagDialog = ({
 			footer={
 				<>
 					<TextButton
+						variant="danger"
 						onClick={() => {
 							deleteTag(tag.id);
 							onClose();
@@ -218,7 +228,7 @@ const TagDialog = ({
 			onClose={onClose}
 		>
 			<div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-3">
-				<span className="text-xs text-zinc-400">Name</span>
+				<span className="text-xs text-[var(--pe-text-muted)]">Name</span>
 				<input
 					autoFocus
 					className={inputClass}
@@ -230,7 +240,7 @@ const TagDialog = ({
 						if (event.key === "Enter") save();
 					}}
 				/>
-				<span className="text-xs text-zinc-400">Frames</span>
+				<span className="text-xs text-[var(--pe-text-muted)]">Frames</span>
 				<div className="flex items-center gap-2">
 					<input
 						aria-label="First frame"
@@ -243,7 +253,7 @@ const TagDialog = ({
 							setFrom(event.target.value);
 						}}
 					/>
-					<span className="text-zinc-500">to</span>
+					<span className="text-[var(--pe-text-muted)]">to</span>
 					<input
 						aria-label="Last frame"
 						className={`${inputClass} w-20`}
@@ -255,9 +265,11 @@ const TagDialog = ({
 							setTo(event.target.value);
 						}}
 					/>
-					<span className="text-xs text-zinc-500">of {frameCount}</span>
+					<span className="text-xs text-[var(--pe-text-muted)]">
+						of {frameCount}
+					</span>
 				</div>
-				<span className="text-xs text-zinc-400">Direction</span>
+				<span className="text-xs text-[var(--pe-text-muted)]">Direction</span>
 				<div className="flex gap-1.5">
 					{DIRECTIONS.map(([value, label]) => (
 						<TextButton
@@ -271,7 +283,7 @@ const TagDialog = ({
 						</TextButton>
 					))}
 				</div>
-				<span className="text-xs text-zinc-400">Color</span>
+				<span className="text-xs text-[var(--pe-text-muted)]">Color</span>
 				<div className="flex items-center gap-1.5">
 					{TAG_COLORS.map((swatch) => (
 						<button
@@ -279,8 +291,8 @@ const TagDialog = ({
 							aria-label={`Tag color ${swatch}`}
 							style={{ backgroundColor: swatch }}
 							type="button"
-							className={`h-5 w-5 rounded ${
-								swatch === color ? "ring-2 ring-white" : ""
+							className={`swatch-preserve h-5 w-5 rounded ${
+								swatch === color ? "ring-2 ring-[var(--pe-text)]" : ""
 							}`}
 							onClick={() => {
 								setColor(swatch);
@@ -289,7 +301,7 @@ const TagDialog = ({
 					))}
 					<input
 						aria-label="Custom tag color"
-						className="h-6 w-8 cursor-pointer rounded border border-zinc-700 bg-transparent"
+						className="h-6 w-8 cursor-pointer rounded border border-[var(--pe-border)] bg-transparent"
 						type="color"
 						value={color}
 						onChange={(event) => {
@@ -321,9 +333,11 @@ function laneTags(tags: Array<FrameTag>): Array<Array<FrameTag>> {
 }
 
 const TagLanes = ({
+	columnWidth,
 	onSelectRange,
 	onEdit,
 }: {
+	columnWidth: number;
 	onSelectRange: (range: Range) => void;
 	onEdit: (tag: FrameTag) => void;
 }): FunctionComponent => {
@@ -334,7 +348,7 @@ const TagLanes = ({
 	if (lanes.length === 0) {
 		return (
 			<div
-				className="flex items-center whitespace-nowrap px-1 text-[10px] text-zinc-600"
+				className="flex items-center whitespace-nowrap px-1.5 text-[10px] text-[var(--pe-text-muted)]"
 				style={{ height: TAG_LANE }}
 			>
 				Shift+click frames, then press <TagIcon className="mx-1 h-3 w-3" />
@@ -351,12 +365,12 @@ const TagLanes = ({
 							key={tag.id}
 							title={`${tag.name} · frames ${tag.from + 1}–${tag.to + 1} · click to select, double-click to edit`}
 							type="button"
-							className={`absolute top-0 flex h-full items-center gap-1 overflow-hidden whitespace-nowrap rounded-sm px-1 text-left text-[10px] font-semibold text-zinc-950 ${
+							className={`swatch-preserve absolute top-0 flex h-full items-center gap-1 overflow-hidden whitespace-nowrap rounded-sm px-1.5 text-left text-[10px] font-semibold text-zinc-950 ${
 								playTag === tag.id ? "ring-1 ring-white" : ""
 							}`}
 							style={{
-								left: tag.from * COLUMN + 1,
-								width: (tag.to - tag.from + 1) * COLUMN - 2,
+								left: tag.from * columnWidth + 1,
+								width: (tag.to - tag.from + 1) * columnWidth - 2,
 								backgroundColor: tag.color,
 							}}
 							onClick={() => {
@@ -427,14 +441,14 @@ const CelCell = ({
 			aria-label={`Layer ${layerIndex + 1}, frame ${frameIndex + 1}`}
 			style={{ width: COLUMN, height: ROW }}
 			type="button"
-			className={`relative flex shrink-0 items-center justify-center border-r border-zinc-800/80 ${
+			className={`relative flex shrink-0 items-center justify-center border-r border-[var(--pe-border-subtle)] ${
 				isActive
-					? "bg-sky-500/30"
+					? "bg-[var(--pe-accent-soft)]"
 					: inRange && isActive === false
-						? "bg-sky-500/10 hover:bg-sky-500/20"
+						? "bg-[var(--pe-accent-soft)]/50 hover:bg-[var(--pe-accent-soft)]"
 						: isReference
-							? "bg-amber-500/5 hover:bg-amber-500/15"
-							: "hover:bg-zinc-700/60"
+							? "bg-[var(--pe-warn-soft)]/50 hover:bg-[var(--pe-warn-soft)]"
+							: "hover:bg-[var(--pe-bg-control-hover)]"
 			}`}
 			title={
 				isReference
@@ -449,26 +463,26 @@ const CelCell = ({
 		>
 			{isReference ? (
 				<>
-					<span className="pointer-events-none absolute inset-x-0 h-0.5 bg-amber-500/35" />
-					<span className="relative h-1.5 w-1.5 rounded-full bg-amber-400/80" />
+					<span className="pointer-events-none absolute inset-x-0 h-0.5 bg-[var(--pe-warn-ink)]/35" />
+					<span className="relative h-1.5 w-1.5 rounded-full bg-[var(--pe-warn-ink)]" />
 				</>
 			) : (
 				<>
 					{(linkState === "middle" || linkState === "end") && (
-						<span className="pointer-events-none absolute left-0 right-1/2 h-0.5 bg-sky-400/75" />
+						<span className="pointer-events-none absolute right-1/2 left-0 h-0.5 bg-[var(--pe-accent)]" />
 					)}
 					{(linkState === "middle" || linkState === "start") && (
-						<span className="pointer-events-none absolute left-1/2 right-0 h-0.5 bg-sky-400/75" />
+						<span className="pointer-events-none absolute right-0 left-1/2 h-0.5 bg-[var(--pe-accent)]" />
 					)}
 					<span
 						className={`relative h-2.5 w-2.5 rounded-full ${
 							linkState !== "none"
 								? empty
-									? "border-2 border-sky-400 bg-zinc-950"
-									: "border border-sky-200 bg-sky-400"
+									? "border-2 border-[var(--pe-accent)] bg-[var(--pe-bg-panel)]"
+									: "border border-[var(--pe-accent-ink)] bg-[var(--pe-accent)]"
 								: empty
-									? "border border-zinc-600"
-									: "bg-zinc-300"
+									? "border border-[var(--pe-border-strong)]"
+									: "bg-[var(--pe-text-secondary)]"
 						}`}
 					/>
 				</>
@@ -515,9 +529,11 @@ const LayerRowHeader = ({
 		<div
 			draggable={!editing}
 			style={{ width: NAMES, height: ROW }}
-			className={`sticky left-0 z-[5] flex shrink-0 items-center gap-1 border-r border-zinc-800 px-1.5 ${
-				isActive ? "bg-zinc-800 text-sky-300" : "bg-zinc-950 text-zinc-300"
-			} ${dropTarget ? "outline outline-2 -outline-offset-2 outline-sky-400" : ""}`}
+			className={`sticky left-0 z-[5] flex shrink-0 items-center gap-1 border-r border-[var(--pe-border)] px-1.5 ${
+				isActive
+					? "bg-[var(--pe-bg-active-row)] text-[var(--pe-text)]"
+					: "bg-[var(--pe-bg-panel)] text-[var(--pe-text-secondary)]"
+			} ${dropTarget ? "outline-2 -outline-offset-2 outline-[var(--pe-accent)]" : ""}`}
 			onClick={() => {
 				setActiveLayer(layerIndex);
 			}}
@@ -551,7 +567,7 @@ const LayerRowHeader = ({
 			<button
 				aria-label={layer.visible ? `Hide ${layer.name}` : `Show ${layer.name}`}
 				aria-pressed={layer.visible}
-				className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-zinc-400 hover:bg-zinc-700 hover:text-white"
+				className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[var(--pe-text-muted)] hover:bg-[var(--pe-bg-control-hover)] hover:text-[var(--pe-text)]"
 				title="Toggle visibility (Alt+click to solo)"
 				type="button"
 				onClick={(event) => {
@@ -563,7 +579,7 @@ const LayerRowHeader = ({
 				{layer.visible ? (
 					<EyeIcon className="h-3.5 w-3.5" />
 				) : (
-					<EyeSlashIcon className="h-3.5 w-3.5 text-zinc-600" />
+					<EyeSlashIcon className="h-3.5 w-3.5 opacity-45" />
 				)}
 			</button>
 
@@ -572,8 +588,10 @@ const LayerRowHeader = ({
 				aria-pressed={Boolean(layer.locked)}
 				title={layer.locked ? "Unlock layer" : "Lock layer"}
 				type="button"
-				className={`flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-zinc-700 ${
-					layer.locked ? "text-amber-400" : "text-zinc-500 hover:text-zinc-200"
+				className={`flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-[var(--pe-bg-control-hover)] ${
+					layer.locked
+						? "text-[var(--pe-warn-ink)]"
+						: "text-[var(--pe-text-muted)] hover:text-[var(--pe-text)]"
 				}`}
 				onClick={(event) => {
 					event.stopPropagation();
@@ -589,7 +607,7 @@ const LayerRowHeader = ({
 
 			{layer.kind === "reference" && (
 				<span
-					className="shrink-0 rounded bg-amber-500/20 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-300"
+					className="shrink-0 rounded bg-[var(--pe-warn-soft)] px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--pe-warn-ink)]"
 					title="Reference layer (high-res guide, excluded from export)"
 				>
 					Ref
@@ -599,7 +617,7 @@ const LayerRowHeader = ({
 			{editing ? (
 				<input
 					autoFocus
-					className="min-w-0 flex-1 rounded border border-sky-500 bg-zinc-900 px-1 py-0 text-[11px] text-zinc-100 outline-none"
+					className="min-w-0 flex-1 rounded border border-[var(--pe-accent)] bg-[var(--pe-bg-panel)] px-1 py-0 text-[11px] text-[var(--pe-text)] outline-none"
 					value={draft}
 					onBlur={commitRename}
 					onChange={(event) => {
@@ -618,10 +636,10 @@ const LayerRowHeader = ({
 					title="Double-click to rename · drag to reorder layers"
 					className={`min-w-0 flex-1 truncate text-left text-[11px] ${
 						!layer.visible
-							? "text-zinc-600 line-through"
+							? "text-[var(--pe-text-muted)] line-through"
 							: isActive
-								? "font-medium text-sky-300"
-								: "text-zinc-300"
+								? "font-semibold text-[var(--pe-accent-soft-ink)]"
+								: "text-[var(--pe-text-secondary)]"
 					}`}
 					onDoubleClick={(event) => {
 						event.stopPropagation();
@@ -633,7 +651,7 @@ const LayerRowHeader = ({
 			)}
 
 			{layer.opacity < 100 && !editing && (
-				<span className="shrink-0 text-[10px] tabular-nums text-zinc-500">
+				<span className="shrink-0 text-[10px] tabular-nums text-[var(--pe-text-muted)]">
 					{layer.opacity}%
 				</span>
 			)}
@@ -644,11 +662,13 @@ const LayerRowHeader = ({
 const FrameHeader = ({
 	index,
 	inRange,
+	compact,
 	onClick,
 	onDropFrame,
 }: {
 	index: number;
 	inRange: boolean;
+	compact: boolean;
 	onClick: (index: number, shift: boolean) => void;
 	onDropFrame: (from: number, to: number) => void;
 }): FunctionComponent => {
@@ -661,16 +681,18 @@ const FrameHeader = ({
 	return (
 		<button
 			draggable
-			style={{ width: COLUMN }}
+			style={{ width: compact ? COLUMN : FRAME_CARD_COLUMN }}
 			title={`Frame ${index + 1} · ${duration} ms · drag to reorder, Shift+click to select a range`}
 			type="button"
-			className={`relative flex shrink-0 flex-col items-center gap-0.5 border-r border-zinc-800 pb-0.5 pt-1 ${
+			className={`relative flex shrink-0 flex-col items-center gap-1 border-r border-[var(--pe-border-subtle)] ${
+				compact ? "pt-1 pb-0.5" : "px-1 py-1.5"
+			} ${
 				isCurrent
-					? "bg-sky-500/25"
+					? "bg-[var(--pe-accent-soft)]"
 					: inRange
-						? "bg-sky-500/10"
-						: "hover:bg-zinc-800"
-			} ${dropTarget ? "outline outline-2 -outline-offset-2 outline-sky-400" : ""}`}
+						? "bg-[var(--pe-accent-soft)]/45"
+						: "hover:bg-[var(--pe-bg-control-hover)]"
+			} ${dropTarget ? "outline-2 -outline-offset-2 outline-[var(--pe-accent)]" : ""}`}
 			onClick={(event) => {
 				onClick(index, event.shiftKey);
 			}}
@@ -698,14 +720,26 @@ const FrameHeader = ({
 				if (Number.isInteger(from)) onDropFrame(from, index);
 			}}
 		>
-			<FrameThumb index={index} />
-			<span
-				className={`text-[10px] tabular-nums leading-none ${
-					isCurrent ? "font-semibold text-sky-300" : "text-zinc-400"
-				}`}
-			>
-				{index + 1}
-			</span>
+			<FrameThumb
+				index={index}
+				size={compact ? THUMB : FRAME_CARD_THUMB}
+			/>
+			<div className="flex items-center gap-1">
+				<span
+					className={`text-[10px] leading-none tabular-nums ${
+						isCurrent
+							? "font-semibold text-[var(--pe-accent-soft-ink)]"
+							: "text-[var(--pe-text-muted)]"
+					}`}
+				>
+					{compact ? index + 1 : `#${index + 1}`}
+				</span>
+			</div>
+			{!compact && (
+				<span className="text-[9px] leading-none tabular-nums text-[var(--pe-text-muted)]">
+					{duration}ms
+				</span>
+			)}
 		</button>
 	);
 };
@@ -716,6 +750,7 @@ const FrameHeader = ({
 
 export const Timeline = (): FunctionComponent => {
 	usePlayback();
+	const showLayers = useUiSettingsStore((state) => state.panels.layers);
 	const frames = useEditorStore((state) => state.frames);
 	const frameCount = frames.length;
 	const layers = useEditorStore((state) => state.layers);
@@ -732,11 +767,13 @@ export const Timeline = (): FunctionComponent => {
 	const store = useEditorStore.getState();
 
 	const [collapsed, setCollapsed] = useState(false);
-	const [gridHeight, setGridHeight] = useState(212);
+	const [gridHeight, setGridHeight] = useState(148);
 	const [range, setRange] = useState<Range>({ from: 0, to: 0 });
 	const [anchor, setAnchor] = useState(0);
 	const [editing, setEditing] = useState<FrameTag | null>(null);
 	const scrollRef = useRef<HTMLDivElement>(null);
+
+	const columnWidth = showLayers ? COLUMN : FRAME_CARD_COLUMN;
 
 	// Moving outside the selected range (keys, playback, clicks) resets it.
 	if (currentFrame < range.from || currentFrame > range.to) {
@@ -753,14 +790,14 @@ export const Timeline = (): FunctionComponent => {
 	useEffect(() => {
 		const scroller = scrollRef.current;
 		if (!scroller) return;
-		const left = currentFrame * COLUMN;
-		const visible = scroller.clientWidth - NAMES;
+		const left = currentFrame * columnWidth;
+		const visible = scroller.clientWidth - (showLayers ? NAMES : 0);
 		if (left < scroller.scrollLeft) {
 			scroller.scrollLeft = left;
-		} else if (left + COLUMN > scroller.scrollLeft + visible) {
-			scroller.scrollLeft = left + COLUMN - visible;
+		} else if (left + columnWidth > scroller.scrollLeft + visible) {
+			scroller.scrollLeft = left + columnWidth - visible;
 		}
-	}, [currentFrame]);
+	}, [currentFrame, columnWidth, showLayers]);
 
 	// Top layer is listed first, like Aseprite / Photoshop.
 	const order = Array.from(
@@ -826,16 +863,16 @@ export const Timeline = (): FunctionComponent => {
 	const icon = "h-4 w-4";
 
 	return (
-		<section className="shrink-0 border-t border-zinc-800 bg-zinc-950/60">
+		<section className="shrink-0 border-t border-[var(--pe-border)] bg-[var(--pe-bg-panel)]">
 			{!collapsed && (
 				<div
-					className="h-1 cursor-row-resize bg-transparent transition-colors hover:bg-sky-500/50"
+					className="h-1 cursor-row-resize bg-transparent transition-colors hover:bg-[var(--pe-accent-soft)]"
 					title="Drag to resize timeline height"
 					onPointerDown={startResize}
 				/>
 			)}
 			{/* ----------------------------- toolbar ----------------------------- */}
-			<div className="flex h-9 items-center gap-1 overflow-x-auto px-2">
+			<div className="editor-scrollbar flex h-9 items-center gap-1 overflow-x-auto px-2">
 				<IconButton
 					className={small}
 					label={collapsed ? "Show timeline" : "Hide timeline"}
@@ -849,11 +886,11 @@ export const Timeline = (): FunctionComponent => {
 						<ChevronDownIcon className={icon} />
 					)}
 				</IconButton>
-				<FilmIcon className="h-4 w-4 shrink-0 text-zinc-500" />
-				<span className="mr-1 shrink-0 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-					Timeline
+				<FilmIcon className="h-4 w-4 shrink-0 text-[var(--pe-text-muted)]" />
+				<span className="mr-1 shrink-0 text-xs font-semibold uppercase tracking-wide text-[var(--pe-text-muted)]">
+					{showLayers ? "Timeline" : "Frames"}
 				</span>
-				<span className="mr-1 shrink-0 text-xs tabular-nums text-zinc-500">
+				<span className="mr-1 shrink-0 text-xs tabular-nums text-[var(--pe-text-muted)]">
 					{currentFrame + 1}/{frameCount}
 				</span>
 
@@ -907,10 +944,10 @@ export const Timeline = (): FunctionComponent => {
 				>
 					<ForwardIcon className={icon} />
 				</IconButton>
-				<label className="ml-1 flex shrink-0 items-center gap-1.5 text-xs text-zinc-400">
+				<label className="ml-1 flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]">
 					Loop
 					<select
-						className="max-w-32 rounded-md border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-100"
+						className="max-w-32 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-0.5 text-xs text-[var(--pe-text)]"
 						title="What Play loops over"
 						value={playTag ?? ""}
 						onChange={(event) => {
@@ -928,7 +965,7 @@ export const Timeline = (): FunctionComponent => {
 					</select>
 				</label>
 				<span
-					className="shrink-0 text-[10px] tabular-nums text-zinc-600"
+					className="shrink-0 text-[10px] tabular-nums text-[var(--pe-text-muted)]"
 					title="Length of one loop"
 				>
 					{(loopLength / 1000).toFixed(2)}s
@@ -975,7 +1012,7 @@ export const Timeline = (): FunctionComponent => {
 
 				<Divider />
 				<label
-					className="flex shrink-0 items-center gap-1.5 text-xs text-zinc-400"
+					className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]"
 					title={
 						rangeSize > 1
 							? `Sets the duration of frames ${range.from + 1}–${range.to + 1}`
@@ -986,7 +1023,7 @@ export const Timeline = (): FunctionComponent => {
 					<input
 						key={`${current?.id ?? 0}-${current?.duration ?? 0}-${rangeSize}`}
 						aria-label="Frame duration in milliseconds"
-						className="w-16 rounded border border-zinc-700 bg-zinc-800 px-1 py-0.5 text-right text-xs tabular-nums text-zinc-100 outline-none focus:border-sky-500"
+						className="w-16 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-0.5 text-right text-xs tabular-nums text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
 						defaultValue={current?.duration ?? 100}
 						max={10_000}
 						min={10}
@@ -1031,10 +1068,10 @@ export const Timeline = (): FunctionComponent => {
 					<Square2StackIcon className={icon} />
 				</IconButton>
 				{onionSkin && (
-					<span className="flex shrink-0 items-center gap-1 text-[10px] text-zinc-400">
+					<span className="flex shrink-0 items-center gap-1 text-[10px] text-[var(--pe-text-muted)]">
 						<input
 							aria-label="Onion skin frames before"
-							className="w-9 rounded border border-zinc-700 bg-zinc-800 px-1 py-0.5 text-right tabular-nums text-rose-300"
+							className="w-9 rounded border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1 py-0.5 text-right tabular-nums text-rose-400"
 							max={5}
 							min={0}
 							title="Frames before (red)"
@@ -1046,7 +1083,7 @@ export const Timeline = (): FunctionComponent => {
 						/>
 						<input
 							aria-label="Onion skin frames after"
-							className="w-9 rounded border border-zinc-700 bg-zinc-800 px-1 py-0.5 text-right tabular-nums text-sky-300"
+							className="w-9 rounded border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1 py-0.5 text-right tabular-nums text-sky-400"
 							max={5}
 							min={0}
 							title="Frames after (blue)"
@@ -1060,12 +1097,12 @@ export const Timeline = (): FunctionComponent => {
 				)}
 
 				{currentTags.length > 0 && (
-					<span className="ml-auto flex shrink-0 items-center gap-1 pl-2 text-[10px] text-zinc-500">
+					<span className="ml-auto flex shrink-0 items-center gap-1 pl-2 text-[10px] text-[var(--pe-text-muted)]">
 						in
 						{currentTags.map((tag) => (
 							<span
 								key={tag.id}
-								className="rounded-sm px-1 font-semibold text-zinc-950"
+								className="swatch-preserve rounded-sm px-1 font-semibold text-zinc-950"
 								style={{ backgroundColor: tag.color }}
 							>
 								{tag.name}
@@ -1076,9 +1113,9 @@ export const Timeline = (): FunctionComponent => {
 			</div>
 
 			{/* ------------------------ layers & cels bar ------------------------ */}
-			{!collapsed && (
-				<div className="flex h-8 items-center gap-1 overflow-x-auto border-t border-zinc-800/80 bg-zinc-900/50 px-2">
-					<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+			{!collapsed && showLayers && (
+				<div className="editor-scrollbar flex h-8 items-center gap-1 overflow-x-auto border-t border-[var(--pe-border-subtle)] bg-[var(--pe-bg-panel-subtle)] px-2">
+					<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[var(--pe-text-muted)]">
 						Layers
 					</span>
 					<IconButton
@@ -1159,10 +1196,10 @@ export const Timeline = (): FunctionComponent => {
 					</IconButton>
 
 					{activeLayerObject && (
-						<label className="ml-1 flex shrink-0 items-center gap-1.5 text-[11px] text-zinc-400">
+						<label className="ml-1 flex shrink-0 items-center gap-1.5 text-[11px] text-[var(--pe-text-muted)]">
 							Opacity
 							<input
-								className="w-16 accent-sky-500"
+								className="w-16 accent-[var(--pe-accent)]"
 								max={100}
 								min={0}
 								type="range"
@@ -1171,14 +1208,14 @@ export const Timeline = (): FunctionComponent => {
 									store.setLayerOpacity(activeLayer, Number(event.target.value));
 								}}
 							/>
-							<span className="w-7 tabular-nums text-zinc-300">
+							<span className="w-7 tabular-nums text-[var(--pe-text)]">
 								{activeLayerObject.opacity}%
 							</span>
 						</label>
 					)}
 
 					<Divider />
-					<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+					<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[var(--pe-text-muted)]">
 						Cels
 					</span>
 					<TextButton
@@ -1247,64 +1284,95 @@ export const Timeline = (): FunctionComponent => {
 			{!collapsed && (
 				<div
 					ref={scrollRef}
-					className="editor-scrollbar overflow-auto border-t border-zinc-800"
+					className="editor-scrollbar overflow-auto border-t border-[var(--pe-border-subtle)] bg-[var(--pe-bg-chrome)]"
 					style={{ maxHeight: gridHeight }}
 				>
-					<div style={{ width: NAMES + frameCount * COLUMN }}>
-						<div className="sticky top-0 z-10 flex bg-zinc-950">
-							<div
-								className="sticky left-0 z-10 flex shrink-0 flex-col justify-between border-r border-zinc-800 bg-zinc-950 px-2 py-1 text-[10px] uppercase tracking-wide text-zinc-500"
-								style={{ width: NAMES }}
-							>
-								<span>Tags</span>
-								<span>Layers ↓ · Frames →</span>
-							</div>
-							<div className="flex flex-col">
-								<div className="py-0.5">
-									<TagLanes
-										onEdit={setEditing}
-										onSelectRange={(next) => {
-											setAnchor(next.from);
-											setRange(next);
-										}}
-									/>
+					{showLayers ? (
+						<div style={{ width: NAMES + frameCount * COLUMN }}>
+							<div className="sticky top-0 z-10 flex bg-[var(--pe-bg-panel)]">
+								<div
+									className="sticky left-0 z-10 flex shrink-0 flex-col justify-between border-r border-[var(--pe-border)] bg-[var(--pe-bg-panel)] px-2 py-1 text-[10px] uppercase tracking-wide text-[var(--pe-text-muted)]"
+									style={{ width: NAMES }}
+								>
+									<span>Tags</span>
+									<span>Layers ↓ · Frames →</span>
 								</div>
-								<div className="flex border-b border-zinc-800">
-									{frames.map((frame, index) => (
-										<FrameHeader
+								<div className="flex flex-col">
+									<div className="py-0.5">
+										<TagLanes
+											columnWidth={COLUMN}
+											onEdit={setEditing}
+											onSelectRange={(next) => {
+												setAnchor(next.from);
+												setRange(next);
+											}}
+										/>
+									</div>
+									<div className="flex border-b border-[var(--pe-border)]">
+										{frames.map((frame, index) => (
+											<FrameHeader
+												key={frame.id}
+												compact
+												inRange={index >= range.from && index <= range.to}
+												index={index}
+												onClick={onHeaderClick}
+												onDropFrame={store.moveFrame}
+											/>
+										))}
+									</div>
+								</div>
+							</div>
+							{order.map((layerIndex) => (
+								<div
+									key={layers[layerIndex]?.id ?? layerIndex}
+									className={`flex border-b border-[var(--pe-border-subtle)] ${
+										layerIndex === activeLayer
+											? "bg-[var(--pe-bg-active-row)]/45"
+											: ""
+									}`}
+								>
+									<LayerRowHeader
+										layerIndex={layerIndex}
+										onDropLayer={store.moveLayerTo}
+									/>
+									{frames.map((frame, frameIndex) => (
+										<CelCell
 											key={frame.id}
-											inRange={index >= range.from && index <= range.to}
-											index={index}
-											onClick={onHeaderClick}
-											onDropFrame={store.moveFrame}
+											frameIndex={frameIndex}
+											inRange={frameIndex >= range.from && frameIndex <= range.to}
+											layerIndex={layerIndex}
+											onSelect={onCelClick}
 										/>
 									))}
 								</div>
-							</div>
+							))}
 						</div>
-						{order.map((layerIndex) => (
-							<div
-								key={layers[layerIndex]?.id ?? layerIndex}
-								className={`flex border-b border-zinc-800/80 ${
-									layerIndex === activeLayer ? "bg-zinc-800/40" : ""
-								}`}
-							>
-								<LayerRowHeader
-									layerIndex={layerIndex}
-									onDropLayer={store.moveLayerTo}
+					) : (
+						<div style={{ width: frameCount * FRAME_CARD_COLUMN }}>
+							<div className="border-b border-[var(--pe-border-subtle)] py-0.5">
+								<TagLanes
+									columnWidth={FRAME_CARD_COLUMN}
+									onEdit={setEditing}
+									onSelectRange={(next) => {
+										setAnchor(next.from);
+										setRange(next);
+									}}
 								/>
-								{frames.map((frame, frameIndex) => (
-									<CelCell
+							</div>
+							<div className="flex">
+								{frames.map((frame, index) => (
+									<FrameHeader
 										key={frame.id}
-										frameIndex={frameIndex}
-										inRange={frameIndex >= range.from && frameIndex <= range.to}
-										layerIndex={layerIndex}
-										onSelect={onCelClick}
+										compact={false}
+										inRange={index >= range.from && index <= range.to}
+										index={index}
+										onClick={onHeaderClick}
+										onDropFrame={store.moveFrame}
 									/>
 								))}
 							</div>
-						))}
-					</div>
+						</div>
+					)}
 				</div>
 			)}
 			{editing && (

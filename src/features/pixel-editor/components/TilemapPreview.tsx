@@ -10,7 +10,7 @@ import { drawTileMap } from "../lib/tilemapRender";
 import { useEditorStore } from "../store/editorStore";
 import { useTilemapStore } from "../store/tilemapStore";
 import type { HexOrientation, TileMapPattern, TileMapType } from "../types";
-import { Modal, TextButton, Toggle } from "./ui";
+import { Modal, PanelCard, TextButton, Toggle } from "./ui";
 
 const MAP_TYPES: Array<{ id: TileMapType; label: string; hint: string }> = [
 	{
@@ -45,7 +45,7 @@ const PATTERNS: Array<{ id: TileMapPattern; label: string; hint: string }> = [
 ];
 
 const selectClass =
-	"rounded-md border border-zinc-700 bg-zinc-800 px-1.5 py-1 text-xs text-zinc-100";
+	"rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-1 text-xs text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]";
 
 /**
  * Live preview of the canvas used as a tile in a tilemap. `box` is the area
@@ -122,7 +122,7 @@ const TilemapPreview = ({
 	useEffect(() => subscribeFrames(draw), [draw, width, height]);
 
 	return (
-		<div className="space-y-2 text-xs text-zinc-300">
+		<div className="space-y-2 text-xs text-[var(--pe-text-secondary)]">
 			<div className="flex flex-wrap gap-1.5">
 				{MAP_TYPES.map((entry) => (
 					<TextButton
@@ -139,7 +139,7 @@ const TilemapPreview = ({
 			</div>
 
 			<div className="flex flex-wrap items-center gap-1.5">
-				<span className="text-zinc-400">Map</span>
+				<span className="text-[var(--pe-text-muted)]">Map</span>
 				{TILEMAP_SIZES.map((option) => (
 					<TextButton
 						key={option}
@@ -156,7 +156,7 @@ const TilemapPreview = ({
 
 			{type === "top-down" && (
 				<div className="flex flex-wrap items-center gap-1.5">
-					<span className="text-zinc-400">Cells</span>
+					<span className="text-[var(--pe-text-muted)]">Cells</span>
 					{PATTERNS.map((entry) => (
 						<TextButton
 							key={entry.id}
@@ -174,9 +174,9 @@ const TilemapPreview = ({
 
 			{type === "isometric" && (
 				<label className="flex items-center gap-2">
-					<span className="text-zinc-400">Ground height</span>
+					<span className="text-[var(--pe-text-muted)]">Ground height</span>
 					<input
-						className="w-16 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 tabular-nums text-zinc-100 outline-none focus:border-sky-500"
+						className="w-16 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 tabular-nums text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
 						max={height}
 						min={1}
 						placeholder={String(Math.floor(width / 2))}
@@ -190,13 +190,13 @@ const TilemapPreview = ({
 							);
 						}}
 					/>
-					<span className="text-zinc-500">px</span>
+					<span className="text-[var(--pe-text-muted)]">px</span>
 				</label>
 			)}
 
 			{type === "hexagonal" && (
 				<label className="flex items-center gap-2">
-					<span className="text-zinc-400">Orientation</span>
+					<span className="text-[var(--pe-text-muted)]">Orientation</span>
 					<select
 						className={selectClass}
 						value={hexOrientation}
@@ -220,7 +220,7 @@ const TilemapPreview = ({
 
 			<div className="editor-scrollbar max-h-[70vh] overflow-auto">
 				<div
-					className="preview-checker inline-block rounded border border-zinc-700"
+					className="preview-checker inline-block rounded-lg border border-[var(--pe-border)]"
 					style={{ minWidth: 24, minHeight: 24 }}
 				>
 					<canvas
@@ -235,55 +235,41 @@ const TilemapPreview = ({
 				</div>
 			</div>
 
-			<p className="text-[11px] text-zinc-500">
+			<p className="text-[11px] text-[var(--pe-text-muted)]">
 				{width}×{height}px tile · map {mapSize.width}×{mapSize.height}px at{" "}
 				{mapSize.scale}×
 				{type === "top-down" && pattern === "rotate" && !square
 					? " · non-square tiles only turn 180°"
 					: ""}
 			</p>
-			{typeInfo && <p className="text-[11px] text-zinc-500">{typeInfo.hint}</p>}
+			{typeInfo && (
+				<p className="text-[11px] text-[var(--pe-text-muted)]">{typeInfo.hint}</p>
+			)}
 		</div>
 	);
 };
 
-/** Collapsible sidebar section under the preview. */
+/** Sidebar tilemap preview card. */
 export const TilemapPanel = (): FunctionComponent => {
-	const open = useTilemapStore((state) => state.panelOpen);
-	const setOpen = useTilemapStore((state) => state.setPanelOpen);
 	const openDialog = useEditorStore((state) => state.openDialog);
 
 	return (
-		<section className="border-t border-zinc-800 p-3">
-			<div className="flex items-center justify-between">
-				<button
-					aria-expanded={open}
-					className="text-xs font-semibold uppercase tracking-wide text-zinc-400 hover:text-zinc-200"
-					title="Preview the canvas as a repeating tile (top-down, isometric, hexagonal)"
-					type="button"
+		<PanelCard
+			collapsible
+			title="Tilemap"
+			actions={
+				<TextButton
+					title="Open a bigger tilemap preview (Shift+T)"
 					onClick={() => {
-						setOpen(!open);
+						openDialog("tilemap");
 					}}
 				>
-					{open ? "▾" : "▸"} Tilemap
-				</button>
-				{open && (
-					<TextButton
-						title="Open a bigger tilemap preview (Shift+T)"
-						onClick={() => {
-							openDialog("tilemap");
-						}}
-					>
-						Large view
-					</TextButton>
-				)}
-			</div>
-			{open && (
-				<div className="mt-2">
-					<TilemapPreview boxHeight={224} boxWidth={224} />
-				</div>
-			)}
-		</section>
+					Large view
+				</TextButton>
+			}
+		>
+			<TilemapPreview boxHeight={224} boxWidth={224} />
+		</PanelCard>
 	);
 };
 
