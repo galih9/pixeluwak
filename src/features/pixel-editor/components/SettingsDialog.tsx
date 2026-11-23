@@ -550,7 +550,7 @@ const ToolbarTab = (): FunctionComponent => {
 				</div>
 
 				<div className="flex flex-wrap items-center justify-between gap-2 border-t border-(--pe-border-subtle) pt-2">
-					<div className="flex items-center gap-1.5">
+					<div className="flex flex-wrap items-center gap-1.5">
 						<TextButton onClick={enableAllTools}>
 							Show all ({TOOLS.length})
 						</TextButton>
@@ -583,7 +583,7 @@ const ToolbarTab = (): FunctionComponent => {
 						<div
 							key={info.id}
 							draggable
-							className={`flex items-center gap-2 px-3 py-2 transition-colors ${
+							className={`flex items-center gap-1.5 px-2 py-2 transition-colors sm:gap-2 sm:px-3 ${
 								isEnabled ? "" : "opacity-60"
 							} ${
 								isDropTarget
@@ -618,7 +618,7 @@ const ToolbarTab = (): FunctionComponent => {
 						>
 							<span
 								aria-hidden="true"
-								className="cursor-grab text-(--pe-text-muted) active:cursor-grabbing"
+								className="hidden cursor-grab text-(--pe-text-muted) active:cursor-grabbing sm:inline-flex"
 								title="Drag to reorder (switches to Manual sort)"
 							>
 								<Bars3Icon className="h-4 w-4" />

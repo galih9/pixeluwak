@@ -28,8 +28,8 @@ export const StatusBar = (): FunctionComponent => {
 	}, [notice, clearNotice]);
 
 	return (
-		<footer className="pe-statusbar flex h-7 shrink-0 items-center gap-4 border-t border-(--pe-border) bg-(--pe-bg-chrome) px-3 text-[11px] tabular-nums text-(--pe-text-muted)">
-			<span className="w-20 text-(--pe-text-secondary)">
+		<footer className="pe-statusbar pe-bottom-safe editor-scrollbar flex min-h-7 shrink-0 items-center gap-2 overflow-x-auto whitespace-nowrap border-t border-(--pe-border) bg-(--pe-bg-chrome) px-2 text-[11px] tabular-nums text-(--pe-text-muted) sm:gap-4 sm:px-3">
+			<span className="min-w-16 shrink-0 text-(--pe-text-secondary) sm:w-20">
 				{cursor ? `x ${cursor.x}, y ${cursor.y}` : "—"}
 			</span>
 			<button

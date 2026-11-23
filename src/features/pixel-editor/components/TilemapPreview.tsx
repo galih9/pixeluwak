@@ -59,6 +59,8 @@ const TilemapPreview = ({
 	boxHeight: number;
 }): FunctionComponent => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const previewContainerRef = useRef<HTMLDivElement>(null);
+	const [measuredWidth, setMeasuredWidth] = useState(0);
 	const width = useEditorStore((state) => state.width);
 	const height = useEditorStore((state) => state.height);
 	const type = useTilemapStore((state) => state.type);
@@ -79,6 +81,25 @@ const TilemapPreview = ({
 	const square = width === height;
 	const typeInfo = MAP_TYPES.find((entry) => entry.id === type);
 
+	useEffect(() => {
+		const container = previewContainerRef.current;
+		if (!container || typeof ResizeObserver === "undefined") return undefined;
+		const observer = new ResizeObserver(([entry]) => {
+			if (!entry) return;
+			const nextWidth = Math.max(120, Math.floor(entry.contentRect.width - 12));
+			setMeasuredWidth((previous) =>
+				previous === nextWidth ? previous : nextWidth
+			);
+		});
+		observer.observe(container);
+		return (): void => {
+			observer.disconnect();
+		};
+	}, []);
+
+	const effectiveBoxWidth =
+		measuredWidth > 0 ? Math.min(boxWidth, measuredWidth) : boxWidth;
+
 	const draw = useCallback(
 		(source: HTMLCanvasElement): void => {
 			const canvas = canvasRef.current;
@@ -96,7 +117,7 @@ const TilemapPreview = ({
 				tileWidth: source.width,
 				tileHeight: source.height,
 			});
-			const scale = fitTileMapScale(layout, boxWidth, boxHeight);
+			const scale = fitTileMapScale(layout, effectiveBoxWidth, boxHeight);
 			drawTileMap(canvas, source, config, { scale, showGrid });
 			setMapSize((previous) =>
 				previous.width === layout.width &&
@@ -113,7 +134,7 @@ const TilemapPreview = ({
 			hexOrientation,
 			isoGroundHeight,
 			showGrid,
-			boxWidth,
+			effectiveBoxWidth,
 			boxHeight,
 		]
 	);
@@ -218,7 +239,10 @@ const TilemapPreview = ({
 				}}
 			/>
 
-			<div className="editor-scrollbar max-h-[70vh] overflow-auto">
+			<div
+				ref={previewContainerRef}
+				className="editor-scrollbar max-h-[60dvh] overflow-auto sm:max-h-[70dvh]"
+			>
 				<div
 					className="preview-checker inline-block rounded-lg border border-(--pe-border)"
 					style={{ minWidth: 24, minHeight: 24 }}

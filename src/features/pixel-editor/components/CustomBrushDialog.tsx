@@ -272,60 +272,62 @@ export const CustomBrushDialog = ({
 				</div>
 			)}
 
-			<div
-				className="mx-auto grid w-fit select-none gap-px rounded-md border border-(--pe-border) bg-(--pe-border) p-px"
-				style={{
-					gridTemplateColumns: `repeat(${draft.width}, minmax(0, 1fr))`,
-				}}
-				onPointerLeave={() => {
-					paintModeReference.current = null;
-				}}
-				onPointerUp={() => {
-					paintModeReference.current = null;
-				}}
-			>
-				{cells.map((value, index) => {
-					const active = value !== 0;
-					const packed = draft.colors?.[index] ?? 0;
-					const cellHex =
-						active && multiColorMode && packedAlpha(packed) > 0
-							? packedToHex(packed)
-							: null;
-					const row = Math.floor(index / draft.width) + 1;
-					const column = (index % draft.width) + 1;
-					return (
-						<button
-							key={index}
-							aria-label={`Brush cell ${column},${row}`}
-							aria-pressed={active}
-							style={cellHex ? { backgroundColor: cellHex } : undefined}
-							type="button"
-							className={`swatch-preserve h-4 w-4 transition-colors ${
-								active
-									? cellHex
-										? ""
-										: "bg-(--pe-accent) hover:bg-(--pe-accent-hover)"
-									: "bg-(--pe-bg-panel) hover:bg-(--pe-bg-control)"
-							}`}
-							onPointerDown={(event) => {
-								event.preventDefault();
-								const isSameColor =
-									active &&
-									(!multiColorMode || cellHex === paintColor.toLowerCase());
-								const nextAction: "draw" | "erase" = isSameColor
-									? "erase"
-									: "draw";
-								paintModeReference.current = nextAction;
-								setCell(index, nextAction);
-							}}
-							onPointerEnter={() => {
-								if (paintModeReference.current !== null) {
-									setCell(index, paintModeReference.current);
-								}
-							}}
-						/>
-					);
-				})}
+			<div className="editor-scrollbar max-w-full overflow-x-auto py-0.5">
+				<div
+					className="mx-auto grid w-fit touch-none select-none gap-px rounded-md border border-(--pe-border) bg-(--pe-border) p-px"
+					style={{
+						gridTemplateColumns: `repeat(${draft.width}, minmax(0, 1fr))`,
+					}}
+					onPointerLeave={() => {
+						paintModeReference.current = null;
+					}}
+					onPointerUp={() => {
+						paintModeReference.current = null;
+					}}
+				>
+					{cells.map((value, index) => {
+						const active = value !== 0;
+						const packed = draft.colors?.[index] ?? 0;
+						const cellHex =
+							active && multiColorMode && packedAlpha(packed) > 0
+								? packedToHex(packed)
+								: null;
+						const row = Math.floor(index / draft.width) + 1;
+						const column = (index % draft.width) + 1;
+						return (
+							<button
+								key={index}
+								aria-label={`Brush cell ${column},${row}`}
+								aria-pressed={active}
+								style={cellHex ? { backgroundColor: cellHex } : undefined}
+								type="button"
+								className={`swatch-preserve h-4 w-4 transition-colors ${
+									active
+										? cellHex
+											? ""
+											: "bg-(--pe-accent) hover:bg-(--pe-accent-hover)"
+										: "bg-(--pe-bg-panel) hover:bg-(--pe-bg-control)"
+								}`}
+								onPointerDown={(event) => {
+									event.preventDefault();
+									const isSameColor =
+										active &&
+										(!multiColorMode || cellHex === paintColor.toLowerCase());
+									const nextAction: "draw" | "erase" = isSameColor
+										? "erase"
+										: "draw";
+									paintModeReference.current = nextAction;
+									setCell(index, nextAction);
+								}}
+								onPointerEnter={() => {
+									if (paintModeReference.current !== null) {
+										setCell(index, paintModeReference.current);
+									}
+								}}
+							/>
+						);
+					})}
+				</div>
 			</div>
 
 			<div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
@@ -409,10 +411,10 @@ export const CustomBrushDialog = ({
 				</TextButton>
 			</div>
 
-			<div className="mt-3 flex items-center gap-2 border-t border-(--pe-border-subtle) pt-3">
+			<div className="mt-3 flex flex-wrap items-center gap-2 border-t border-(--pe-border-subtle) pt-3">
 				<input
 					aria-label="New preset name"
-					className="flex-1 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-xs text-(--pe-text) outline-none focus:border-(--pe-accent)"
+					className="min-w-0 flex-1 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-xs text-(--pe-text) outline-none focus:border-(--pe-accent)"
 					placeholder="Save pattern as preset…"
 					value={presetName}
 					onChange={(event) => {

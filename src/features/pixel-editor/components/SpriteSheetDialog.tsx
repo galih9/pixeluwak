@@ -166,7 +166,7 @@ export const SpriteSheetDialog = ({
 			}
 			onClose={onClose}
 		>
-			<div className="grid grid-cols-[1fr_auto] gap-5">
+			<div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:gap-5">
 				<div className="min-w-0 space-y-4">
 					<div>
 						<p className="mb-2 text-xs text-(--pe-text-muted)">Layout</p>
@@ -268,10 +268,10 @@ export const SpriteSheetDialog = ({
 						</div>
 					</div>
 
-					<label className="flex items-center gap-2">
+					<label className="flex flex-wrap items-center gap-2">
 						File name
 						<input
-							className="flex-1 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-(--pe-text) outline-none focus:border-(--pe-accent)"
+							className="min-w-0 flex-1 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-(--pe-text) outline-none focus:border-(--pe-accent)"
 							value={fileName}
 							onChange={(event) => {
 								setFileName(event.target.value);
@@ -287,7 +287,7 @@ export const SpriteSheetDialog = ({
 					/>
 				</div>
 
-				<div className="w-75 space-y-2">
+				<div className="w-full space-y-2 md:w-75">
 					<div className="preview-checker flex items-center justify-center overflow-auto rounded-lg border border-(--pe-border) p-1">
 						<canvas
 							ref={previewRef}
@@ -295,6 +295,7 @@ export const SpriteSheetDialog = ({
 								width: layout.width * zoom,
 								height: layout.height * zoom,
 								maxWidth: "100%",
+								aspectRatio: `${layout.width} / ${layout.height}`,
 								imageRendering: "pixelated",
 							}}
 						/>

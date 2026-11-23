@@ -52,6 +52,7 @@ import {
 	snapPointToGrid,
 	stampSpray,
 } from "../lib/tools";
+import { computePinchView, type PinchState } from "../lib/touchZoom";
 import {
 	compositeView,
 	type EditorState,
@@ -707,11 +708,59 @@ export const PixelCanvas = (): FunctionComponent => {
 		let interaction: Interaction | null = null;
 		let lastPaintPoint: Point | null = null;
 		let wheelAccumulator = 0;
+		const activeTouches = new Map<number, { clientX: number; clientY: number }>();
+		let pinchState: PinchState | null = null;
+		let suppressTouchUntilAllUp = false;
+		let lastTouchSyncCommitAt = 0;
 
 		const liveDraw = (data: PixelBuffer): void => {
 			container.dispatchEvent(
 				new CustomEvent("pixel-live-draw", { detail: data })
 			);
+		};
+
+		const cancelActiveInteraction = (): void => {
+			const current = interaction;
+			interaction = null;
+			if (current) {
+				if (current.kind === "spray") {
+					window.clearInterval(current.timerId);
+				}
+				setPreview(null);
+				const state = getState();
+				liveDraw(withTextPreview(state, visiblePixels(state)));
+				setIsPanning(false);
+			}
+			if (performance.now() - lastTouchSyncCommitAt < 120) {
+				getState().undo();
+				lastTouchSyncCommitAt = 0;
+			}
+		};
+
+		const startPinch = (): void => {
+			const entries = Array.from(activeTouches.values());
+			const first = entries[0];
+			const second = entries[1];
+			if (!first || !second) return;
+			const state = getState();
+			const bounds = container.getBoundingClientRect();
+			const midpointLocalX =
+				(first.clientX + second.clientX) / 2 - bounds.left;
+			const midpointLocalY =
+				(first.clientY + second.clientY) / 2 - bounds.top;
+			const startDistance = Math.hypot(
+				second.clientX - first.clientX,
+				second.clientY - first.clientY
+			);
+			pinchState = {
+				startDistance,
+				startZoom: state.zoom,
+				anchorDocumentX: (midpointLocalX - state.panX) / state.zoom,
+				anchorDocumentY: (midpointLocalY - state.panY) / state.zoom,
+			};
+			setHover(null);
+			state.setCursor(null);
+			setIsPanning(true);
 		};
 
 		const toDocument = (event: { clientX: number; clientY: number }): Point => {
@@ -784,7 +833,8 @@ export const PixelCanvas = (): FunctionComponent => {
 
 		const hitPerspectiveHandle = (
 			state: EditorState,
-			documentPoint: Point
+			documentPoint: Point,
+			isTouch = false
 		): "point1" | "point2" | "point3" | "horizon" | null => {
 			const guide = state.perspectiveGuide;
 			if (!guide.enabled || guide.lockHandles) return null;
@@ -793,7 +843,7 @@ export const PixelCanvas = (): FunctionComponent => {
 				state.width,
 				state.height
 			);
-			const threshold = 10 / Math.max(1, state.zoom);
+			const threshold = (isTouch ? 22 : 10) / Math.max(1, state.zoom);
 			const check = (target: Point): boolean =>
 				Math.hypot(documentPoint.x - target.x, documentPoint.y - target.y) <=
 				threshold;
@@ -808,6 +858,24 @@ export const PixelCanvas = (): FunctionComponent => {
 		};
 
 		const onPointerDown = (event: PointerEvent): void => {
+			if (event.pointerType === "touch") {
+				activeTouches.set(event.pointerId, {
+					clientX: event.clientX,
+					clientY: event.clientY,
+				});
+				if (activeTouches.size >= 2) {
+					event.preventDefault();
+					cancelActiveInteraction();
+					suppressTouchUntilAllUp = true;
+					if (!pinchState && activeTouches.size === 2) {
+						startPinch();
+					}
+					return;
+				}
+				if (suppressTouchUntilAllUp) {
+					return;
+				}
+			}
 			if (interaction) return;
 			const startState = getState();
 			const point = toDocument(event);
@@ -834,7 +902,11 @@ export const PixelCanvas = (): FunctionComponent => {
 			if (event.button !== 0 && event.button !== 2) return;
 
 			if (event.button === 0) {
-				const handle = hitPerspectiveHandle(startState, point);
+				const handle = hitPerspectiveHandle(
+					startState,
+					point,
+					event.pointerType === "touch"
+				);
 				if (handle) {
 					event.preventDefault();
 					container.setPointerCapture(event.pointerId);
@@ -1122,7 +1194,12 @@ export const PixelCanvas = (): FunctionComponent => {
 							symmetryYPos: state.symmetryYPos,
 						}
 					);
-					if (changed) state.commitPixels(data);
+					if (changed) {
+						state.commitPixels(data);
+						if (event.pointerType === "touch") {
+							lastTouchSyncCommitAt = performance.now();
+						}
+					}
 					break;
 				}
 				case "gradient": {
@@ -1181,6 +1258,9 @@ export const PixelCanvas = (): FunctionComponent => {
 						pickedHex,
 						primary ? state.primaryColor : state.secondaryColor
 					);
+					if (event.pointerType === "touch") {
+						lastTouchSyncCommitAt = performance.now();
+					}
 					break;
 				}
 				case "eyedropper": {
@@ -1339,6 +1419,40 @@ export const PixelCanvas = (): FunctionComponent => {
 		};
 
 		const onPointerMove = (event: PointerEvent): void => {
+			if (event.pointerType === "touch" && activeTouches.has(event.pointerId)) {
+				activeTouches.set(event.pointerId, {
+					clientX: event.clientX,
+					clientY: event.clientY,
+				});
+				if (pinchState && activeTouches.size >= 2) {
+					event.preventDefault();
+					const entries = Array.from(activeTouches.values());
+					const first = entries[0];
+					const second = entries[1];
+					if (first && second) {
+						const bounds = container.getBoundingClientRect();
+						const midpointLocalX =
+							(first.clientX + second.clientX) / 2 - bounds.left;
+						const midpointLocalY =
+							(first.clientY + second.clientY) / 2 - bounds.top;
+						const distance = Math.hypot(
+							second.clientX - first.clientX,
+							second.clientY - first.clientY
+						);
+						const view = computePinchView(
+							pinchState,
+							distance,
+							midpointLocalX,
+							midpointLocalY
+						);
+						getState().setView(view.zoom, view.panX, view.panY);
+					}
+					return;
+				}
+				if (suppressTouchUntilAllUp) {
+					return;
+				}
+			}
 			const point = toDocument(event);
 			const rawPixel = toPixel(point);
 			const state = getState();
@@ -1589,6 +1703,18 @@ export const PixelCanvas = (): FunctionComponent => {
 		};
 
 		const finish = (event: PointerEvent): void => {
+			if (event.pointerType === "touch") {
+				activeTouches.delete(event.pointerId);
+				if (pinchState && activeTouches.size < 2) {
+					pinchState = null;
+					setIsPanning(false);
+				}
+				if (activeTouches.size === 0) {
+					suppressTouchUntilAllUp = false;
+					setHover(null);
+					getState().setCursor(null);
+				}
+			}
 			if (container.hasPointerCapture(event.pointerId)) {
 				container.releasePointerCapture(event.pointerId);
 			}

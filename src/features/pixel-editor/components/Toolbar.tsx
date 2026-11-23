@@ -60,18 +60,39 @@ type ToolbarSlot = {
 
 function positionSidePopoverFallback(
 	trigger: HTMLElement | null,
-	popover: HTMLElement | null
+	popover: HTMLElement | null,
+	placement: "side" | "top" = "side"
 ): void {
 	if (!trigger || !popover) return;
+	const cssFeature =
+		placement === "top"
+			? "position-area: block-start"
+			: "position-area: inline-end";
 	if (
 		typeof CSS !== "undefined" &&
 		typeof CSS.supports === "function" &&
-		CSS.supports("position-area", "inline-end")
+		CSS.supports(cssFeature)
 	) {
 		return;
 	}
 	const triggerRect = trigger.getBoundingClientRect();
 	const popoverRect = popover.getBoundingClientRect();
+	if (placement === "top") {
+		const fitsAbove = triggerRect.top - popoverRect.height - 8 >= 8;
+		const top = fitsAbove
+			? triggerRect.top - popoverRect.height - 6
+			: Math.min(
+					window.innerHeight - popoverRect.height - 8,
+					triggerRect.bottom + 6
+				);
+		const left = Math.max(
+			8,
+			Math.min(triggerRect.left, window.innerWidth - popoverRect.width - 8)
+		);
+		popover.style.left = `${left}px`;
+		popover.style.top = `${Math.max(8, top)}px`;
+		return;
+	}
 	const fitsRight =
 		triggerRect.right + popoverRect.width + 12 <= window.innerWidth;
 	const left = fitsRight
@@ -171,7 +192,16 @@ const PopoverSection = ({
 	</div>
 );
 
-export const Toolbar = (): FunctionComponent => {
+type ToolbarProps = {
+	orientation?: "vertical" | "horizontal";
+	bottomSafeArea?: boolean;
+};
+
+export const Toolbar = ({
+	orientation = "vertical",
+	bottomSafeArea = false,
+}: ToolbarProps): FunctionComponent => {
+	const isHorizontal = orientation === "horizontal";
 	const tool = useEditorStore((state) => state.tool);
 	const setTool = useEditorStore((state) => state.setTool);
 	const primaryColor = useEditorStore((state) => state.primaryColor);
@@ -299,9 +329,11 @@ export const Toolbar = (): FunctionComponent => {
 		if (currentIndex < 0) return;
 
 		let nextIndex: number | null = null;
-		if (event.key === "ArrowDown") {
+		const nextKey = isHorizontal ? "ArrowRight" : "ArrowDown";
+		const previousKey = isHorizontal ? "ArrowLeft" : "ArrowUp";
+		if (event.key === nextKey) {
 			nextIndex = (currentIndex + 1) % focusOrderIds.length;
-		} else if (event.key === "ArrowUp") {
+		} else if (event.key === previousKey) {
 			nextIndex =
 				(currentIndex - 1 + focusOrderIds.length) % focusOrderIds.length;
 		} else if (event.key === "Home") {
@@ -360,7 +392,9 @@ export const Toolbar = (): FunctionComponent => {
 	};
 
 	const focusGroupAttributes = {
-		focusgroup: "toolbar wrap block",
+		focusgroup: isHorizontal
+			? "toolbar wrap inline"
+			: "toolbar wrap block",
 	} as Record<string, string>;
 
 	const selectToolFromGroup = (parentId: Tool, chosenId: Tool): void => {
@@ -376,17 +410,65 @@ export const Toolbar = (): FunctionComponent => {
 	const inputClass =
 		"w-full rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-xs tabular-nums text-(--pe-text) outline-none focus:border-(--pe-accent)";
 
+	const placement = isHorizontal ? "top" : "side";
+
+	const colorWell = (
+		<div
+			className={
+				isHorizontal
+					? "flex shrink-0 items-center gap-1 border-l border-(--pe-border) pl-1.5"
+					: "mt-auto flex flex-col items-center gap-1.5 pt-3"
+			}
+		>
+			<div className="relative h-8 w-8 sm:h-9 sm:w-9">
+				<div
+					className="swatch-preserve absolute right-0 bottom-0 h-5 w-5 rounded-md border border-(--pe-border-strong) shadow-xs sm:h-6 sm:w-6"
+					style={{ background: secondaryColor }}
+					title="Secondary color (right click)"
+				/>
+				<div
+					className="swatch-preserve absolute top-0 left-0 h-5 w-5 rounded-md border-2 border-(--pe-bg-panel) ring-1 ring-(--pe-border-strong) shadow-sm sm:h-6 sm:w-6"
+					style={{ background: primaryColor }}
+					title="Primary color (left click)"
+				/>
+			</div>
+			<button
+				aria-label="Swap primary and secondary colors (X)"
+				className="min-h-7 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-(--pe-text-muted) transition-colors hover:bg-(--pe-bg-control) hover:text-(--pe-text)"
+				title="Swap colors (X)"
+				type="button"
+				onClick={swapColors}
+			>
+				{isHorizontal ? "⇄" : "⇄ swap"}
+			</button>
+		</div>
+	);
+
 	return (
-		<aside className="flex shrink-0 bg-(--pe-bg-panel)">
+		<aside
+			className={
+				isHorizontal
+					? `flex shrink-0 items-center gap-1 border-t border-(--pe-border) bg-(--pe-bg-panel) px-1.5 py-1${bottomSafeArea ? " pe-bottom-safe" : ""}`
+					: "flex shrink-0 bg-(--pe-bg-panel)"
+			}
+		>
 			<div
-				className="editor-scrollbar flex flex-1 flex-col overflow-x-hidden overflow-y-auto px-1.5 py-2.5"
-				style={{ width }}
+				style={isHorizontal ? undefined : { width }}
+				className={
+					isHorizontal
+						? "editor-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overscroll-x-contain py-0.5"
+						: "pe-toolbar-vertical-body editor-scrollbar flex flex-1 flex-col overflow-x-hidden overflow-y-auto px-1.5 py-2.5"
+				}
 			>
 				<div
 					aria-label="Drawing tools"
-					aria-orientation="vertical"
-					className="grid grid-cols-[repeat(auto-fill,36px)] justify-center gap-1"
+					aria-orientation={isHorizontal ? "horizontal" : "vertical"}
 					role="toolbar"
+					className={
+						isHorizontal
+							? "flex shrink-0 items-center gap-1"
+							: "pe-toolbar-grid grid justify-center gap-1"
+					}
 					{...focusGroupAttributes}
 					onKeyDown={handleToolbarKeyDown}
 				>
@@ -413,19 +495,23 @@ export const Toolbar = (): FunctionComponent => {
 							<Fragment key={slot.id}>
 								{showGroupSeparator && (
 									<div
-										aria-orientation="horizontal"
-										className="col-span-full my-1 h-px border-t border-(--pe-border-subtle)"
+										aria-orientation={isHorizontal ? "vertical" : "horizontal"}
 										role="separator"
+										className={
+											isHorizontal
+												? "mx-0.5 h-6 w-px shrink-0 border-l border-(--pe-border-subtle)"
+												: "col-span-full my-1 h-px border-t border-(--pe-border-subtle)"
+										}
 									/>
 								)}
-								<div className="relative h-9 w-9">
+								<div className="pe-tool-slot">
 									<button
 										ref={(element) => {
 											itemRefs.current[itemId] = element;
 										}}
 										aria-label={`${displayed.label} (${displayed.shortcut})`}
 										aria-pressed={isActive}
-										className="pe-tool-btn h-9 w-9"
+										className="pe-tool-btn"
 										style={hasChildren ? anchorStyle : undefined}
 										tabIndex={tabStopFor(itemId)}
 										type="button"
@@ -464,6 +550,7 @@ export const Toolbar = (): FunctionComponent => {
 													flyoutRefs.current[slot.id] = element;
 												}}
 												className="editor-side-popover w-52 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-1.5 text-xs text-(--pe-text)"
+												data-placement={isHorizontal ? "top" : undefined}
 												id={flyoutId}
 												popover="auto"
 												style={popoverPositionStyle}
@@ -471,7 +558,8 @@ export const Toolbar = (): FunctionComponent => {
 													if (event.newState === "open") {
 														positionSidePopoverFallback(
 															itemRefs.current[itemId] ?? null,
-															flyoutRefs.current[slot.id] ?? null
+															flyoutRefs.current[slot.id] ?? null,
+															placement
 														);
 													}
 												}}
@@ -518,9 +606,13 @@ export const Toolbar = (): FunctionComponent => {
 					})}
 
 					<div
-						aria-orientation="horizontal"
-						className="col-span-full my-1 h-px border-t border-(--pe-border-subtle)"
+						aria-orientation={isHorizontal ? "vertical" : "horizontal"}
 						role="separator"
+						className={
+							isHorizontal
+								? "mx-0.5 h-6 w-px shrink-0 border-l border-(--pe-border-subtle)"
+								: "col-span-full my-1 h-px border-t border-(--pe-border-subtle)"
+						}
 					/>
 
 					{/* Guides & Assists Switch Toggles */}
@@ -535,7 +627,7 @@ export const Toolbar = (): FunctionComponent => {
 							}}
 							aria-label="Mirror Horizontal"
 							aria-pressed={symmetryX}
-							className="pe-tool-btn h-9 w-9"
+							className="pe-tool-btn shrink-0"
 							tabIndex={tabStopFor("guide:mirror-h")}
 							title="Mirror Horizontal (vertical axis)"
 							type="button"
@@ -553,7 +645,7 @@ export const Toolbar = (): FunctionComponent => {
 							}}
 							aria-label="Mirror Vertical"
 							aria-pressed={symmetryY}
-							className="pe-tool-btn h-9 w-9"
+							className="pe-tool-btn shrink-0"
 							tabIndex={tabStopFor("guide:mirror-v")}
 							title="Mirror Vertical (horizontal axis)"
 							type="button"
@@ -566,7 +658,7 @@ export const Toolbar = (): FunctionComponent => {
 						</button>
 
 						{/* Ruler Grid Tool + Corner Settings Gear */}
-						<div className="relative h-9 w-9">
+						<div className="pe-tool-slot">
 							<button
 									ref={(element) => {
 										itemRefs.current["guide:grid"] = element;
@@ -574,7 +666,7 @@ export const Toolbar = (): FunctionComponent => {
 									}}
 									aria-label="Grid Ruler Tool"
 									aria-pressed={rulerGrid.enabled}
-									className="pe-tool-btn h-9 w-9"
+									className="pe-tool-btn"
 									style={{ anchorName: "--guide-grid-anchor" }}
 									tabIndex={tabStopFor("guide:grid")}
 									title="Grid Ruler Tool (snap & cell draw bounds)"
@@ -593,6 +685,7 @@ export const Toolbar = (): FunctionComponent => {
 								<div
 									ref={gridPopoverRef}
 									className="editor-side-popover w-64 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-3 text-xs text-(--pe-text)"
+									data-placement={isHorizontal ? "top" : undefined}
 									id={gridPopoverId}
 									popover="auto"
 									style={{ positionAnchor: "--guide-grid-anchor" }}
@@ -600,7 +693,8 @@ export const Toolbar = (): FunctionComponent => {
 										if (event.newState === "open") {
 											positionSidePopoverFallback(
 												gridTriggerRef.current,
-												gridPopoverRef.current
+												gridPopoverRef.current,
+												placement
 											);
 										}
 									}}
@@ -771,7 +865,7 @@ export const Toolbar = (): FunctionComponent => {
 							</div>
 
 							{/* Perspective Guide Tool + Corner Settings Gear */}
-							<div className="relative h-9 w-9">
+							<div className="pe-tool-slot">
 								<button
 									ref={(element) => {
 										itemRefs.current["guide:perspective"] = element;
@@ -779,7 +873,7 @@ export const Toolbar = (): FunctionComponent => {
 									}}
 									aria-label="Perspective Guide Tool"
 									aria-pressed={perspectiveGuide.enabled}
-									className="pe-tool-btn h-9 w-9"
+									className="pe-tool-btn"
 									style={{ anchorName: "--guide-perspective-anchor" }}
 									tabIndex={tabStopFor("guide:perspective")}
 									title="Perspective Guide (1, 2, 3 point & fisheye)"
@@ -798,6 +892,7 @@ export const Toolbar = (): FunctionComponent => {
 								<div
 									ref={perspectivePopoverRef}
 									className="editor-side-popover w-64 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-3 text-xs text-(--pe-text)"
+									data-placement={isHorizontal ? "top" : undefined}
 									id={perspectivePopoverId}
 									popover="auto"
 									style={{ positionAnchor: "--guide-perspective-anchor" }}
@@ -805,7 +900,8 @@ export const Toolbar = (): FunctionComponent => {
 										if (event.newState === "open") {
 											positionSidePopoverFallback(
 												perspectiveTriggerRef.current,
-												perspectivePopoverRef.current
+												perspectivePopoverRef.current,
+												placement
 											);
 										}
 									}}
@@ -979,7 +1075,7 @@ export const Toolbar = (): FunctionComponent => {
 							</div>
 
 							{/* Tiled Preview Tool + Corner Settings Gear */}
-							<div className="relative h-9 w-9">
+							<div className="pe-tool-slot">
 								<button
 									ref={(element) => {
 										itemRefs.current["guide:tiled"] = element;
@@ -987,7 +1083,7 @@ export const Toolbar = (): FunctionComponent => {
 									}}
 									aria-label="Tiled Preview Tool"
 									aria-pressed={tiledPreview.enabled}
-									className="pe-tool-btn h-9 w-9"
+									className="pe-tool-btn"
 									style={{ anchorName: "--guide-tiled-anchor" }}
 									tabIndex={tabStopFor("guide:tiled")}
 									title="Tiled Preview (live seamless tiling around canvas)"
@@ -1006,6 +1102,7 @@ export const Toolbar = (): FunctionComponent => {
 								<div
 									ref={tiledPopoverRef}
 									className="editor-side-popover w-56 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-3 text-xs text-(--pe-text)"
+									data-placement={isHorizontal ? "top" : undefined}
 									id={tiledPopoverId}
 									popover="auto"
 									style={{ positionAnchor: "--guide-tiled-anchor" }}
@@ -1013,7 +1110,8 @@ export const Toolbar = (): FunctionComponent => {
 										if (event.newState === "open") {
 											positionSidePopoverFallback(
 												tiledTriggerRef.current,
-												tiledPopoverRef.current
+												tiledPopoverRef.current,
+												placement
 											);
 										}
 									}}
@@ -1056,56 +1154,38 @@ export const Toolbar = (): FunctionComponent => {
 					</div>
 				</div>
 
-				{/* Tactile Primary / Secondary Color Well */}
-				<div className="mt-auto flex flex-col items-center gap-1.5 pt-3">
-					<div className="relative h-9 w-9">
-						<div
-							className="swatch-preserve absolute right-0 bottom-0 h-6 w-6 rounded-md border border-(--pe-border-strong) shadow-xs"
-							style={{ background: secondaryColor }}
-							title="Secondary color (right click)"
-						/>
-						<div
-							className="swatch-preserve absolute top-0 left-0 h-6 w-6 rounded-md border-2 border-(--pe-bg-panel) ring-1 ring-(--pe-border-strong) shadow-sm"
-							style={{ background: primaryColor }}
-							title="Primary color (left click)"
-						/>
-					</div>
-					<button
-						aria-label="Swap primary and secondary colors (X)"
-						className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-(--pe-text-muted) transition-colors hover:bg-(--pe-bg-control) hover:text-(--pe-text)"
-						title="Swap colors (X)"
-						type="button"
-						onClick={swapColors}
-					>
-						⇄ swap
-					</button>
-				</div>
+				{/* Tactile Primary / Secondary Color Well (Vertical Mode) */}
+				{!isHorizontal && colorWell}
 			</div>
 
-			<div
-				aria-label="Resize toolbar"
-				aria-orientation="vertical"
-				aria-valuemax={MAX_TOOLBAR_WIDTH}
-				aria-valuemin={MIN_TOOLBAR_WIDTH}
-				aria-valuenow={width}
-				role="separator"
-				tabIndex={0}
-				title="Drag to resize toolbar (double-click to reset)"
-				className={`group relative w-1.5 shrink-0 cursor-col-resize touch-none select-none transition-colors hover:bg-(--pe-accent-soft) focus-visible:bg-(--pe-accent-soft) focus-visible:outline-none ${
-					isResizing ? "bg-(--pe-accent-soft)" : ""
-				}`}
-				onKeyDown={handleResizeKeyDown}
-				onPointerDown={handleResizePointerDown}
-				onDoubleClick={() => {
-					setWidth(DEFAULT_TOOLBAR_WIDTH);
-				}}
-			>
+			{isHorizontal && colorWell}
+
+			{!isHorizontal && (
 				<div
-					className={`pointer-events-none absolute inset-y-0 left-0 w-px transition-colors group-hover:bg-(--pe-accent) group-focus-visible:bg-(--pe-accent) ${
-						isResizing ? "bg-(--pe-accent)" : "bg-(--pe-border)"
+					aria-label="Resize toolbar"
+					aria-orientation="vertical"
+					aria-valuemax={MAX_TOOLBAR_WIDTH}
+					aria-valuemin={MIN_TOOLBAR_WIDTH}
+					aria-valuenow={width}
+					role="separator"
+					tabIndex={0}
+					title="Drag to resize toolbar (double-click to reset)"
+					className={`group relative w-1.5 shrink-0 cursor-col-resize touch-none select-none transition-colors hover:bg-(--pe-accent-soft) focus-visible:bg-(--pe-accent-soft) focus-visible:outline-none ${
+						isResizing ? "bg-(--pe-accent-soft)" : ""
 					}`}
-				/>
-			</div>
+					onKeyDown={handleResizeKeyDown}
+					onPointerDown={handleResizePointerDown}
+					onDoubleClick={() => {
+						setWidth(DEFAULT_TOOLBAR_WIDTH);
+					}}
+				>
+					<div
+						className={`pointer-events-none absolute inset-y-0 left-0 w-px transition-colors group-hover:bg-(--pe-accent) group-focus-visible:bg-(--pe-accent) ${
+							isResizing ? "bg-(--pe-accent)" : "bg-(--pe-border)"
+						}`}
+					/>
+				</div>
+			)}
 		</aside>
 	);
 };

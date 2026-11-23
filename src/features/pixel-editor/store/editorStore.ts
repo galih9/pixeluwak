@@ -330,6 +330,7 @@ type Actions = {
 	zoomTo: (zoom: number, anchorX?: number, anchorY?: number) => void;
 	zoomStep: (direction: 1 | -1, anchorX?: number, anchorY?: number) => void;
 	setPan: (panX: number, panY: number) => void;
+	setView: (zoom: number, panX: number, panY: number) => void;
 	toggleGrid: () => void;
 	setCursor: (cursor: Point | null) => void;
 	openDialog: (dialog: DialogKind | null) => void;
@@ -2343,9 +2344,50 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 	/* --------------------------------- view -------------------------------- */
 
 	setViewport: (viewportWidth, viewportHeight): void => {
-		const first = get().viewportWidth === 0;
+		const previous = get();
+		const first =
+			previous.viewportWidth === 0 || previous.viewportHeight === 0;
+		if (viewportWidth <= 0 || viewportHeight <= 0) {
+			set({ viewportWidth, viewportHeight });
+			return;
+		}
+		if (first) {
+			set({ viewportWidth, viewportHeight });
+			get().fitView();
+			return;
+		}
+		if (
+			previous.viewportWidth === viewportWidth &&
+			previous.viewportHeight === viewportHeight
+		) {
+			return;
+		}
+
+		const previousPortrait = previous.viewportHeight > previous.viewportWidth;
+		const nextPortrait = viewportHeight > viewportWidth;
+		const deltaX = (viewportWidth - previous.viewportWidth) / 2;
+		const deltaY = (viewportHeight - previous.viewportHeight) / 2;
+		const nextPanX = Math.round(previous.panX + deltaX);
+		const nextPanY = Math.round(previous.panY + deltaY);
+		const canvasWidth = previous.width * previous.zoom;
+		const canvasHeight = previous.height * previous.zoom;
+		const wasFitted =
+			canvasWidth <= previous.viewportWidth &&
+			canvasHeight <= previous.viewportHeight;
+		const nowOverflows =
+			canvasWidth > viewportWidth || canvasHeight > viewportHeight;
+		const mostlyOffscreen =
+			nextPanX + canvasWidth < 24 ||
+			nextPanX > viewportWidth - 24 ||
+			nextPanY + canvasHeight < 24 ||
+			nextPanY > viewportHeight - 24;
+
 		set({ viewportWidth, viewportHeight });
-		if (first) get().fitView();
+		if (previousPortrait !== nextPortrait || mostlyOffscreen || (wasFitted && nowOverflows)) {
+			get().fitView();
+		} else {
+			set({ panX: nextPanX, panY: nextPanY });
+		}
 	},
 
 	fitView: (): void => {
@@ -2385,6 +2427,10 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 
 	setPan: (panX, panY): void => {
 		set({ panX: Math.round(panX), panY: Math.round(panY) });
+	},
+
+	setView: (zoom, panX, panY): void => {
+		set({ zoom, panX: Math.round(panX), panY: Math.round(panY) });
 	},
 
 	toggleGrid: (): void => {

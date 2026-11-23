@@ -6,6 +6,7 @@ import {
 	ArrowsUpDownIcon,
 	ArrowUturnLeftIcon,
 	ArrowUturnRightIcon,
+	Bars3Icon,
 	ChevronDownIcon,
 	Cog6ToothIcon,
 	DocumentPlusIcon,
@@ -18,6 +19,7 @@ import {
 	SparklesIcon,
 	Squares2X2Icon,
 	TableCellsIcon,
+	ViewColumnsIcon,
 } from "@heroicons/react/20/solid";
 import { type CSSProperties, type ReactNode, useId, useRef } from "react";
 import type { FunctionComponent } from "../../../common/types";
@@ -25,6 +27,11 @@ import { openFile, saveProject } from "../lib/files";
 import { useEditorStore } from "../store/editorStore";
 import { PixeluwakEmblem } from "./PixeluwakEmblem";
 import { Divider, IconButton, Kbd } from "./ui";
+
+const MENU_ANCHOR = { anchorName: "--topbar-menu-anchor" } as CSSProperties;
+const MENU_POPOVER_POS = {
+	positionAnchor: "--topbar-menu-anchor",
+} as CSSProperties;
 
 const FILE_ANCHOR = { anchorName: "--topbar-file-anchor" } as CSSProperties;
 const FILE_POPOVER_POS = {
@@ -87,10 +94,29 @@ const MenuItem = ({
 	</button>
 );
 
-export const TopBar = (): FunctionComponent => {
+type TopBarProps = {
+	isCompact?: boolean;
+	isNarrow?: boolean;
+	isPortraitDock?: boolean;
+	hasStudioPanels?: boolean;
+	studioDrawerOpen?: boolean;
+	onToggleStudioDrawer?: () => void;
+};
+
+export const TopBar = ({
+	isCompact = false,
+	isNarrow = false,
+	isPortraitDock = false,
+	hasStudioPanels = false,
+	studioDrawerOpen = false,
+	onToggleStudioDrawer,
+}: TopBarProps): FunctionComponent => {
+	const menuPopoverId = useId();
 	const filePopoverId = useId();
 	const canvasPopoverId = useId();
 
+	const menuTriggerRef = useRef<HTMLButtonElement>(null);
+	const menuPopoverRef = useRef<HTMLDivElement>(null);
 	const fileTriggerRef = useRef<HTMLButtonElement>(null);
 	const filePopoverRef = useRef<HTMLDivElement>(null);
 	const canvasTriggerRef = useRef<HTMLButtonElement>(null);
@@ -117,185 +143,332 @@ export const TopBar = (): FunctionComponent => {
 	const svgClass = "h-4 w-4";
 
 	return (
-		<header className="pe-topbar flex h-12 shrink-0 items-center justify-between gap-2 border-b border-(--pe-border) bg-(--pe-bg-chrome) px-3">
-			{/* Left Zone: Brand + Project Name + File & Canvas Menus */}
-			<div className="flex min-w-0 items-center gap-1.5">
-				<div className="flex items-center gap-2 pr-1">
+		<header className="pe-topbar flex min-h-12 shrink-0 items-center justify-between gap-1.5 border-b border-(--pe-border) bg-(--pe-bg-chrome) px-2 sm:gap-2 sm:px-3">
+			{/* Left Zone: Brand + Project Name + File & Canvas Menus (or unified Menu on narrow screens) */}
+			<div className="flex min-w-0 items-center gap-1 sm:gap-1.5">
+				<div className="flex items-center gap-2 pr-0.5 sm:pr-1">
 					<PixeluwakEmblem />
 					<span className="hidden text-xs font-bold tracking-tight text-(--pe-text) sm:inline">
 						Pixeluwak
 					</span>
 				</div>
 
-				<input
-					aria-label="Project name"
-					className="w-28 rounded-lg border border-transparent bg-transparent px-2 py-1 text-xs font-medium text-(--pe-text) outline-none transition-colors hover:border-(--pe-border) hover:bg-(--pe-bg-control) focus:border-(--pe-accent) focus:bg-(--pe-bg-panel) sm:w-36"
-					value={name}
-					onChange={(event) => {
-						setName(event.target.value);
-					}}
-				/>
+				{isNarrow ? (
+					<>
+						<button
+							ref={menuTriggerRef}
+							aria-label="Menu"
+							className="inline-flex h-9 items-center gap-1 rounded-lg border border-(--pe-border) bg-(--pe-bg-control) px-2 text-xs font-medium text-(--pe-text-secondary) transition-colors hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent)"
+							popoverTarget={menuPopoverId}
+							style={MENU_ANCHOR}
+							type="button"
+						>
+							<Bars3Icon className="h-4 w-4 shrink-0" />
+							<span>Menu</span>
+							<ChevronDownIcon className="h-3.5 w-3.5 opacity-70" />
+						</button>
 
-				<Divider />
+						<div
+							ref={menuPopoverRef}
+							className="editor-popover w-68 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-2 text-xs text-(--pe-text)"
+							id={menuPopoverId}
+							popover="auto"
+							style={MENU_POPOVER_POS}
+							onToggle={(event) => {
+								if (event.newState === "open") {
+									positionPopoverFallback(
+										menuTriggerRef.current,
+										menuPopoverRef.current
+									);
+								}
+							}}
+						>
+							<label className="mb-2 block px-1 text-[10px] font-semibold uppercase tracking-wide text-(--pe-text-muted)">
+								Project name
+								<input
+									aria-label="Project name"
+									className="mt-1 w-full rounded-lg border border-(--pe-border) bg-(--pe-bg-control) px-2.5 py-1.5 text-xs font-medium text-(--pe-text) outline-none focus:border-(--pe-accent) focus:bg-(--pe-bg-panel)"
+									value={name}
+									onChange={(event) => {
+										setName(event.target.value);
+									}}
+								/>
+							</label>
 
-				<button
-					ref={fileTriggerRef}
-					className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-(--pe-text-secondary) transition-colors hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent)"
-					popoverTarget={filePopoverId}
-					style={FILE_ANCHOR}
-					type="button"
-				>
-					<span>File</span>
-					<ChevronDownIcon className="h-3.5 w-3.5 opacity-70" />
-				</button>
+							<div className="my-1.5 h-px bg-(--pe-border-subtle)" />
+							<div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-(--pe-text-muted)">
+								File
+							</div>
+							<MenuItem
+								icon={<DocumentPlusIcon className={svgClass} />}
+								label="New Canvas…"
+								onClick={() => {
+									menuPopoverRef.current?.hidePopover();
+									openDialog("new");
+								}}
+							/>
+							<MenuItem
+								icon={<ArrowsPointingOutIcon className={svgClass} />}
+								label="Resize Canvas…"
+								onClick={() => {
+									menuPopoverRef.current?.hidePopover();
+									openDialog("resize");
+								}}
+							/>
+							<MenuItem
+								icon={<FolderOpenIcon className={svgClass} />}
+								label="Open Project or Image…"
+								onClick={() => {
+									menuPopoverRef.current?.hidePopover();
+									void openFile();
+								}}
+							/>
+							<MenuItem
+								icon={<ArrowDownTrayIcon className={svgClass} />}
+								label="Save Project"
+								onClick={() => {
+									menuPopoverRef.current?.hidePopover();
+									saveProject();
+								}}
+							/>
+							<MenuItem
+								icon={<PhotoIcon className={svgClass} />}
+								label="Export PNG / GIF…"
+								onClick={() => {
+									menuPopoverRef.current?.hidePopover();
+									openDialog("export");
+								}}
+							/>
+							<MenuItem
+								icon={<TableCellsIcon className={svgClass} />}
+								label="Export Sprite Sheet…"
+								onClick={() => {
+									menuPopoverRef.current?.hidePopover();
+									openDialog("spritesheet");
+								}}
+							/>
 
-				<div
-					ref={filePopoverRef}
-					className="editor-popover w-60 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-1.5 text-xs text-(--pe-text)"
-					id={filePopoverId}
-					popover="auto"
-					style={FILE_POPOVER_POS}
-					onToggle={(event) => {
-						if (event.newState === "open") {
-							positionPopoverFallback(
-								fileTriggerRef.current,
-								filePopoverRef.current
-							);
-						}
-					}}
-				>
-					<MenuItem
-						icon={<DocumentPlusIcon className={svgClass} />}
-						label="New Canvas…"
-						onClick={() => {
-							filePopoverRef.current?.hidePopover();
-							openDialog("new");
-						}}
-					/>
-					<MenuItem
-						icon={<ArrowsPointingOutIcon className={svgClass} />}
-						label="Resize Canvas…"
-						shortcut="Shift+R"
-						onClick={() => {
-							filePopoverRef.current?.hidePopover();
-							openDialog("resize");
-						}}
-					/>
-					<MenuItem
-						icon={<FolderOpenIcon className={svgClass} />}
-						label="Open Project or Image…"
-						shortcut="Ctrl+O"
-						onClick={() => {
-							filePopoverRef.current?.hidePopover();
-							void openFile();
-						}}
-					/>
-					<MenuItem
-						icon={<ArrowDownTrayIcon className={svgClass} />}
-						label="Save Project"
-						shortcut="Ctrl+S"
-						onClick={() => {
-							filePopoverRef.current?.hidePopover();
-							saveProject();
-						}}
-					/>
-					<div className="my-1 h-px bg-(--pe-border-subtle)" />
-					<MenuItem
-						icon={<PhotoIcon className={svgClass} />}
-						label="Export PNG / GIF…"
-						shortcut="Ctrl+E"
-						onClick={() => {
-							filePopoverRef.current?.hidePopover();
-							openDialog("export");
-						}}
-					/>
-					<MenuItem
-						icon={<TableCellsIcon className={svgClass} />}
-						label="Export Sprite Sheet…"
-						shortcut="Ctrl+Shift+E"
-						onClick={() => {
-							filePopoverRef.current?.hidePopover();
-							openDialog("spritesheet");
-						}}
-					/>
-				</div>
+							<div className="my-1.5 h-px bg-(--pe-border-subtle)" />
+							<div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-(--pe-text-muted)">
+								Canvas
+							</div>
+							<MenuItem
+								icon={<ArrowsRightLeftIcon className={svgClass} />}
+								label="Flip Horizontal"
+								onClick={() => {
+									menuPopoverRef.current?.hidePopover();
+									flip("horizontal");
+								}}
+							/>
+							<MenuItem
+								icon={<ArrowsUpDownIcon className={svgClass} />}
+								label="Flip Vertical"
+								onClick={() => {
+									menuPopoverRef.current?.hidePopover();
+									flip("vertical");
+								}}
+							/>
+							<MenuItem
+								icon={<SparklesIcon className={svgClass} />}
+								label="Auto Outline…"
+								onClick={() => {
+									menuPopoverRef.current?.hidePopover();
+									openDialog("outline");
+								}}
+							/>
+							<MenuItem
+								icon={<MapIcon className={svgClass} />}
+								label="Tilemap Large View…"
+								onClick={() => {
+									menuPopoverRef.current?.hidePopover();
+									openDialog("tilemap");
+								}}
+							/>
 
-				<button
-					ref={canvasTriggerRef}
-					className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-(--pe-text-secondary) transition-colors hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent)"
-					popoverTarget={canvasPopoverId}
-					style={CANVAS_ANCHOR}
-					type="button"
-				>
-					<span>Canvas</span>
-					<ChevronDownIcon className="h-3.5 w-3.5 opacity-70" />
-				</button>
+							<div className="my-1.5 h-px bg-(--pe-border-subtle)" />
+							<MenuItem
+								icon={<QuestionMarkCircleIcon className={svgClass} />}
+								label="Keyboard shortcuts…"
+								onClick={() => {
+									menuPopoverRef.current?.hidePopover();
+									openDialog("help");
+								}}
+							/>
+						</div>
+					</>
+				) : (
+					<>
+						<input
+							aria-label="Project name"
+							className="w-28 rounded-lg border border-transparent bg-transparent px-2 py-1 text-xs font-medium text-(--pe-text) outline-none transition-colors hover:border-(--pe-border) hover:bg-(--pe-bg-control) focus:border-(--pe-accent) focus:bg-(--pe-bg-panel) sm:w-36"
+							value={name}
+							onChange={(event) => {
+								setName(event.target.value);
+							}}
+						/>
 
-				<div
-					ref={canvasPopoverRef}
-					className="editor-popover w-56 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-1.5 text-xs text-(--pe-text)"
-					id={canvasPopoverId}
-					popover="auto"
-					style={CANVAS_POPOVER_POS}
-					onToggle={(event) => {
-						if (event.newState === "open") {
-							positionPopoverFallback(
-								canvasTriggerRef.current,
-								canvasPopoverRef.current
-							);
-						}
-					}}
-				>
-					<MenuItem
-						icon={<ArrowsPointingOutIcon className={svgClass} />}
-						label="Resize Canvas…"
-						shortcut="Shift+R"
-						onClick={() => {
-							canvasPopoverRef.current?.hidePopover();
-							openDialog("resize");
-						}}
-					/>
-					<div className="my-1 h-px bg-(--pe-border-subtle)" />
-					<MenuItem
-						icon={<ArrowsRightLeftIcon className={svgClass} />}
-						label="Flip Horizontal"
-						onClick={() => {
-							canvasPopoverRef.current?.hidePopover();
-							flip("horizontal");
-						}}
-					/>
-					<MenuItem
-						icon={<ArrowsUpDownIcon className={svgClass} />}
-						label="Flip Vertical"
-						onClick={() => {
-							canvasPopoverRef.current?.hidePopover();
-							flip("vertical");
-						}}
-					/>
-					<div className="my-1 h-px bg-(--pe-border-subtle)" />
-					<MenuItem
-						icon={<SparklesIcon className={svgClass} />}
-						label="Auto Outline…"
-						shortcut="Shift+O"
-						onClick={() => {
-							canvasPopoverRef.current?.hidePopover();
-							openDialog("outline");
-						}}
-					/>
-					<MenuItem
-						icon={<MapIcon className={svgClass} />}
-						label="Tilemap Large View…"
-						shortcut="Shift+T"
-						onClick={() => {
-							canvasPopoverRef.current?.hidePopover();
-							openDialog("tilemap");
-						}}
-					/>
-				</div>
+						<Divider />
+
+						<button
+							ref={fileTriggerRef}
+							className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-(--pe-text-secondary) transition-colors hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent)"
+							popoverTarget={filePopoverId}
+							style={FILE_ANCHOR}
+							type="button"
+						>
+							<span>File</span>
+							<ChevronDownIcon className="h-3.5 w-3.5 opacity-70" />
+						</button>
+
+						<div
+							ref={filePopoverRef}
+							className="editor-popover w-60 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-1.5 text-xs text-(--pe-text)"
+							id={filePopoverId}
+							popover="auto"
+							style={FILE_POPOVER_POS}
+							onToggle={(event) => {
+								if (event.newState === "open") {
+									positionPopoverFallback(
+										fileTriggerRef.current,
+										filePopoverRef.current
+									);
+								}
+							}}
+						>
+							<MenuItem
+								icon={<DocumentPlusIcon className={svgClass} />}
+								label="New Canvas…"
+								onClick={() => {
+									filePopoverRef.current?.hidePopover();
+									openDialog("new");
+								}}
+							/>
+							<MenuItem
+								icon={<ArrowsPointingOutIcon className={svgClass} />}
+								label="Resize Canvas…"
+								shortcut="Shift+R"
+								onClick={() => {
+									filePopoverRef.current?.hidePopover();
+									openDialog("resize");
+								}}
+							/>
+							<MenuItem
+								icon={<FolderOpenIcon className={svgClass} />}
+								label="Open Project or Image…"
+								shortcut="Ctrl+O"
+								onClick={() => {
+									filePopoverRef.current?.hidePopover();
+									void openFile();
+								}}
+							/>
+							<MenuItem
+								icon={<ArrowDownTrayIcon className={svgClass} />}
+								label="Save Project"
+								shortcut="Ctrl+S"
+								onClick={() => {
+									filePopoverRef.current?.hidePopover();
+									saveProject();
+								}}
+							/>
+							<div className="my-1 h-px bg-(--pe-border-subtle)" />
+							<MenuItem
+								icon={<PhotoIcon className={svgClass} />}
+								label="Export PNG / GIF…"
+								shortcut="Ctrl+E"
+								onClick={() => {
+									filePopoverRef.current?.hidePopover();
+									openDialog("export");
+								}}
+							/>
+							<MenuItem
+								icon={<TableCellsIcon className={svgClass} />}
+								label="Export Sprite Sheet…"
+								shortcut="Ctrl+Shift+E"
+								onClick={() => {
+									filePopoverRef.current?.hidePopover();
+									openDialog("spritesheet");
+								}}
+							/>
+						</div>
+
+						<button
+							ref={canvasTriggerRef}
+							className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-(--pe-text-secondary) transition-colors hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent)"
+							popoverTarget={canvasPopoverId}
+							style={CANVAS_ANCHOR}
+							type="button"
+						>
+							<span>Canvas</span>
+							<ChevronDownIcon className="h-3.5 w-3.5 opacity-70" />
+						</button>
+
+						<div
+							ref={canvasPopoverRef}
+							className="editor-popover w-56 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-1.5 text-xs text-(--pe-text)"
+							id={canvasPopoverId}
+							popover="auto"
+							style={CANVAS_POPOVER_POS}
+							onToggle={(event) => {
+								if (event.newState === "open") {
+									positionPopoverFallback(
+										canvasTriggerRef.current,
+										canvasPopoverRef.current
+									);
+								}
+							}}
+						>
+							<MenuItem
+								icon={<ArrowsPointingOutIcon className={svgClass} />}
+								label="Resize Canvas…"
+								shortcut="Shift+R"
+								onClick={() => {
+									canvasPopoverRef.current?.hidePopover();
+									openDialog("resize");
+								}}
+							/>
+							<div className="my-1 h-px bg-(--pe-border-subtle)" />
+							<MenuItem
+								icon={<ArrowsRightLeftIcon className={svgClass} />}
+								label="Flip Horizontal"
+								onClick={() => {
+									canvasPopoverRef.current?.hidePopover();
+									flip("horizontal");
+								}}
+							/>
+							<MenuItem
+								icon={<ArrowsUpDownIcon className={svgClass} />}
+								label="Flip Vertical"
+								onClick={() => {
+									canvasPopoverRef.current?.hidePopover();
+									flip("vertical");
+								}}
+							/>
+							<div className="my-1 h-px bg-(--pe-border-subtle)" />
+							<MenuItem
+								icon={<SparklesIcon className={svgClass} />}
+								label="Auto Outline…"
+								shortcut="Shift+O"
+								onClick={() => {
+									canvasPopoverRef.current?.hidePopover();
+									openDialog("outline");
+								}}
+							/>
+							<MenuItem
+								icon={<MapIcon className={svgClass} />}
+								label="Tilemap Large View…"
+								shortcut="Shift+T"
+								onClick={() => {
+									canvasPopoverRef.current?.hidePopover();
+									openDialog("tilemap");
+								}}
+							/>
+						</div>
+					</>
+				)}
 			</div>
 
 			{/* Center Zone: History + Grid Pill */}
-			<div className="flex items-center gap-1 rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle) p-0.5">
+			<div className="flex shrink-0 items-center gap-0.5 rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle) p-0.5 sm:gap-1">
 				<IconButton
 					className={iconClass}
 					disabled={!canUndo}
@@ -325,55 +498,80 @@ export const TopBar = (): FunctionComponent => {
 				</IconButton>
 			</div>
 
-			{/* Right Zone: Zoom Pill + Help + Settings */}
-			<div className="flex items-center gap-1.5">
-				<div className="hidden items-center gap-0.5 rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle) p-0.5 md:flex">
-					<IconButton
-						className={iconClass}
-						label="Zoom out (-)"
-						onClick={() => {
-							zoomStep(-1);
-						}}
-					>
-						<MagnifyingGlassMinusIcon className={svgClass} />
-					</IconButton>
-					<span className="w-12 text-center text-xs font-medium tabular-nums text-(--pe-text-secondary)">
-						{Math.round(zoom * 100)}%
-					</span>
-					<IconButton
-						className={iconClass}
-						label="Zoom in (+)"
-						onClick={() => {
-							zoomStep(1);
-						}}
-					>
-						<MagnifyingGlassPlusIcon className={svgClass} />
-					</IconButton>
-					<IconButton
-						className={iconClass}
-						label="Fit to screen (0)"
-						onClick={fitView}
-					>
-						<ArrowsPointingInIcon className={svgClass} />
-					</IconButton>
-				</div>
+			{/* Right Zone: Zoom Pill (desktop) + Studio Panels (landscape compact) + Help + Settings */}
+			<div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+				{!isCompact && (
+					<div className="hidden items-center gap-0.5 rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle) p-0.5 md:flex">
+						<IconButton
+							className={iconClass}
+							label="Zoom out (-)"
+							onClick={() => {
+								zoomStep(-1);
+							}}
+						>
+							<MagnifyingGlassMinusIcon className={svgClass} />
+						</IconButton>
+						<span className="w-12 text-center text-xs font-medium tabular-nums text-(--pe-text-secondary)">
+							{Math.round(zoom * 100)}%
+						</span>
+						<IconButton
+							className={iconClass}
+							label="Zoom in (+)"
+							onClick={() => {
+								zoomStep(1);
+							}}
+						>
+							<MagnifyingGlassPlusIcon className={svgClass} />
+						</IconButton>
+						<IconButton
+							className={iconClass}
+							label="Fit to screen (0)"
+							onClick={fitView}
+						>
+							<ArrowsPointingInIcon className={svgClass} />
+						</IconButton>
+					</div>
+				)}
 
-				<IconButton
-					className="h-8 w-8"
-					label="Keyboard shortcuts (?)"
-					onClick={() => {
-						openDialog("help");
-					}}
-				>
-					<QuestionMarkCircleIcon className="h-4.5 w-4.5" />
-				</IconButton>
+				{isCompact &&
+					hasStudioPanels &&
+					!isPortraitDock &&
+					onToggleStudioDrawer && (
+						<button
+							aria-expanded={studioDrawerOpen}
+							aria-label="Studio panels"
+							title="Studio panels"
+							type="button"
+							className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent) ${
+								studioDrawerOpen
+									? "border-(--pe-accent-ring) bg-(--pe-accent) text-(--pe-accent-ink)"
+									: "border-(--pe-border) bg-(--pe-bg-control) text-(--pe-text) hover:bg-(--pe-bg-control-hover)"
+							}`}
+							onClick={onToggleStudioDrawer}
+						>
+							<ViewColumnsIcon className="h-4 w-4 shrink-0" />
+							<span className="hidden md:inline">Panels</span>
+						</button>
+					)}
+
+				{!isNarrow && (
+					<IconButton
+						className="h-8 w-8"
+						label="Keyboard shortcuts (?)"
+						onClick={() => {
+							openDialog("help");
+						}}
+					>
+						<QuestionMarkCircleIcon className="h-4.5 w-4.5" />
+					</IconButton>
+				)}
 
 				<button
 					aria-label="Studio Settings"
 					aria-pressed={dialog === "settings"}
 					title="Studio settings (Ctrl+,)"
 					type="button"
-					className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent) ${
+					className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent) sm:px-2.5 ${
 						dialog === "settings"
 							? "border-(--pe-accent-ring) bg-(--pe-accent) text-(--pe-accent-ink)"
 							: "border-(--pe-border) bg-(--pe-bg-control) text-(--pe-text) hover:bg-(--pe-bg-control-hover)"
@@ -383,7 +581,9 @@ export const TopBar = (): FunctionComponent => {
 					}}
 				>
 					<Cog6ToothIcon className="h-4 w-4 shrink-0" />
-					<span className="hidden sm:inline">Settings</span>
+					<span className={isCompact ? "hidden lg:inline" : "hidden sm:inline"}>
+						Settings
+					</span>
 				</button>
 			</div>
 		</header>

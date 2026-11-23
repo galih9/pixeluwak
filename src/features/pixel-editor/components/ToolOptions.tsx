@@ -603,7 +603,7 @@ const TextOptions = (): FunctionComponent => {
 			<input
 				ref={inputRef}
 				aria-label="Text"
-				className="h-7 w-44 shrink-0 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 text-xs text-(--pe-text) outline-none placeholder:text-(--pe-text-muted) focus:border-(--pe-accent)"
+				className="h-7 w-36 shrink-0 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 text-xs text-(--pe-text) outline-none placeholder:text-(--pe-text-muted) focus:border-(--pe-accent) sm:w-44"
 				placeholder={placed ? "Type your text…" : "Click the canvas first"}
 				value={textValue}
 				onChange={(event) => {
@@ -1082,7 +1082,7 @@ export const ToolOptions = (): FunctionComponent => {
 	}
 
 	return (
-		<div className="editor-scrollbar flex h-10 shrink-0 items-center gap-2.5 overflow-x-auto border-b border-(--pe-border-subtle) bg-(--pe-bg-panel-subtle) px-3">
+		<div className="editor-scrollbar flex min-h-10 shrink-0 items-center gap-2.5 overflow-x-auto overscroll-x-contain border-b border-(--pe-border-subtle) bg-(--pe-bg-panel-subtle) px-3 py-1">
 			<span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-(--pe-border) bg-(--pe-bg-panel) px-2 py-1 text-[11px] font-semibold text-(--pe-text) shadow-2xs">
 				<ToolIcon
 					className="h-3.5 w-3.5 text-(--pe-accent)"

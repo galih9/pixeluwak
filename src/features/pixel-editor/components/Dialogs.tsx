@@ -72,7 +72,7 @@ const NewCanvasDialog = ({
 					</TextButton>
 				))}
 			</div>
-			<div className="flex items-center gap-3">
+			<div className="flex flex-wrap items-center gap-3">
 				<label className="flex items-center gap-2">
 					W
 					<input
@@ -168,7 +168,7 @@ const ExportDialog = ({
 			}
 			onClose={onClose}
 		>
-			<div className="mb-4 flex items-center gap-1.5">
+			<div className="mb-4 flex flex-wrap items-center gap-1.5">
 				<TextButton
 					active={!isGif}
 					onClick={() => {
@@ -202,10 +202,10 @@ const ExportDialog = ({
 			</div>
 			{isGif ? (
 				<div className="mb-4">
-					<label className="flex items-center gap-2">
+					<label className="flex flex-wrap items-center gap-2">
 						Frames
 						<select
-							className="flex-1 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-(--pe-text) outline-none focus:border-(--pe-accent)"
+							className="min-w-0 flex-1 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-(--pe-text) outline-none focus:border-(--pe-accent)"
 							value={tagId ?? ""}
 							onChange={(event) => {
 								setTagId(
@@ -235,10 +235,10 @@ const ExportDialog = ({
 					</p>
 				)
 			)}
-			<label className="mb-4 flex items-center gap-2">
+			<label className="mb-4 flex flex-wrap items-center gap-2">
 				File name
 				<input
-					className="flex-1 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-(--pe-text) outline-none focus:border-(--pe-accent)"
+					className="min-w-0 flex-1 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-(--pe-text) outline-none focus:border-(--pe-accent)"
 					value={fileName}
 					onChange={(event) => {
 						setFileName(event.target.value);
@@ -313,9 +313,12 @@ const HelpDialog = ({
 		title="Keyboard shortcuts"
 		onClose={onClose}
 	>
-		<dl className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 text-xs">
+		<dl className="grid grid-cols-1 items-start gap-y-2.5 text-xs sm:grid-cols-[auto_1fr] sm:items-center sm:gap-x-4 sm:gap-y-2">
 			{SHORTCUTS.map(([keys, action]) => (
-				<div key={`${keys}-${action}`} className="contents">
+				<div
+					key={`${keys}-${action}`}
+					className="flex flex-col gap-0.5 sm:contents"
+				>
 					<dt>
 						<Kbd>{keys}</Kbd>
 					</dt>

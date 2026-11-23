@@ -185,8 +185,8 @@ export const OutlineDialog = ({
 			}
 			onClose={onClose}
 		>
-			<div className="flex gap-5">
-				<div className="w-56 shrink-0">
+			<div className="flex flex-col gap-4 md:flex-row md:gap-5">
+				<div className="w-full shrink-0 md:w-56">
 					<Heading>Boldness</Heading>
 					<Slider
 						hint="How many pixels wide the outline is"
@@ -349,6 +349,8 @@ export const OutlineDialog = ({
 							style={{
 								width: width * scale,
 								height: height * scale,
+								maxWidth: "100%",
+								aspectRatio: `${width} / ${height}`,
 								imageRendering: "pixelated",
 							}}
 						/>

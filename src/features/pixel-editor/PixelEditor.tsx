@@ -1,12 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FunctionComponent } from "../../common/types";
+import { CanvasHud } from "./components/CanvasHud";
 import { ColorPickerPanel } from "./components/ColorPanel";
 import { Dialogs } from "./components/Dialogs";
 import { LayersPanel } from "./components/LayersPanel";
 import { PalettePanel } from "./components/PalettePanel";
 import { PixelCanvas } from "./components/PixelCanvas";
+import { PortraitBottomBar } from "./components/PortraitBottomBar";
 import { PreviewPanel } from "./components/PreviewPanel";
 import { StatusBar } from "./components/StatusBar";
+import {
+	type StudioDrawerTab,
+	StudioPanelsDrawer,
+} from "./components/StudioPanelsDrawer";
 import { TilemapPanel } from "./components/TilemapPreview";
 import { Timeline } from "./components/Timeline";
 import { Toolbar } from "./components/Toolbar";
@@ -14,6 +20,10 @@ import { ToolOptions } from "./components/ToolOptions";
 import { TopBar } from "./components/TopBar";
 import { usePixelEditorApi } from "./hooks/usePixelEditorApi";
 import { useShortcuts } from "./hooks/useShortcuts";
+import {
+	COMPACT_MEDIA_QUERY,
+	useViewportLayout,
+} from "./hooks/useViewportLayout";
 import { startAutosave } from "./store/autosave";
 import { useEditorStore } from "./store/editorStore";
 import {
@@ -32,6 +42,11 @@ export const PixelEditor = (): FunctionComponent => {
 	const theme = useUiSettingsStore((state) => state.theme);
 	const panels = useUiSettingsStore((state) => state.panels);
 	const showToolbar = useUiSettingsStore((state) => state.showToolbar);
+
+	const { isCompact, isPortraitDock, isNarrow } = useViewportLayout();
+	const [drawerOpen, setDrawerOpen] = useState(false);
+	const [drawerTab, setDrawerTab] = useState<StudioDrawerTab>("color");
+	const [compactTimelineOpen, setCompactTimelineOpen] = useState(false);
 
 	useEffect(() => startAutosave(), []);
 
@@ -57,6 +72,26 @@ export const PixelEditor = (): FunctionComponent => {
 	}, []);
 
 	useEffect(() => {
+		if (
+			typeof window === "undefined" ||
+			typeof window.matchMedia !== "function"
+		) {
+			return undefined;
+		}
+		const media = window.matchMedia(COMPACT_MEDIA_QUERY);
+		const onChange = (): void => {
+			if (!media.matches) {
+				setDrawerOpen(false);
+				setCompactTimelineOpen(false);
+			}
+		};
+		media.addEventListener("change", onChange);
+		return (): void => {
+			media.removeEventListener("change", onChange);
+		};
+	}, []);
+
+	useEffect(() => {
 		return useEditorStore.subscribe((state, previousState) => {
 			if (state.tool !== previousState.tool) {
 				useUiSettingsStore.getState().recordToolUse(state.tool);
@@ -64,25 +99,72 @@ export const PixelEditor = (): FunctionComponent => {
 		});
 	}, []);
 
-	const showDockedLayers = panels.layers && !panels.frames;
-	const hasRightSidebar =
-		panels.colorPicker ||
-		panels.palette ||
-		showDockedLayers ||
-		panels.preview ||
-		panels.tilemap;
+	const showDockedLayers = isCompact
+		? panels.layers
+		: panels.layers && !panels.frames;
+
+	const availableDrawerTabs = useMemo<Array<StudioDrawerTab>>(() => {
+		const tabs: Array<StudioDrawerTab> = [];
+		if (panels.colorPicker || panels.palette) tabs.push("color");
+		if (showDockedLayers) tabs.push("layers");
+		if (panels.preview || panels.tilemap) tabs.push("preview");
+		return tabs;
+	}, [
+		panels.colorPicker,
+		panels.palette,
+		panels.preview,
+		panels.tilemap,
+		showDockedLayers,
+	]);
+
+	const hasStudioPanels = availableDrawerTabs.length > 0;
+	const hasRightSidebar = !isCompact && hasStudioPanels;
+	const effectiveDrawerOpen = isCompact && drawerOpen && hasStudioPanels;
+	const resolvedDrawerTab = availableDrawerTabs.includes(drawerTab)
+		? drawerTab
+		: (availableDrawerTabs[0] ?? "color");
+	const previewLabel = !panels.preview && panels.tilemap ? "Tilemap" : "Preview";
+	const showPortraitDockBar =
+		isPortraitDock && (hasStudioPanels || panels.frames);
+
+	const openDrawerToTab = (tab: StudioDrawerTab): void => {
+		if (effectiveDrawerOpen && resolvedDrawerTab === tab) {
+			setDrawerOpen(false);
+		} else {
+			setDrawerTab(tab);
+			setDrawerOpen(true);
+		}
+	};
+
+	const toggleStudioDrawer = (): void => {
+		if (!hasStudioPanels) return;
+		if (effectiveDrawerOpen) {
+			setDrawerOpen(false);
+		} else {
+			setDrawerTab(resolvedDrawerTab);
+			setDrawerOpen(true);
+		}
+	};
 
 	return (
-		<div className="pixel-editor-root flex h-screen w-screen select-none flex-col overflow-hidden bg-(--pe-bg-desk) text-(--pe-text)">
-			<TopBar />
+		<div className="pixel-editor-root flex h-dvh w-full select-none flex-col overflow-hidden bg-(--pe-bg-desk) text-(--pe-text)">
+			<TopBar
+				hasStudioPanels={hasStudioPanels}
+				isCompact={isCompact}
+				isNarrow={isNarrow}
+				isPortraitDock={isPortraitDock}
+				studioDrawerOpen={effectiveDrawerOpen}
+				onToggleStudioDrawer={toggleStudioDrawer}
+			/>
 			{panels.toolOptions && <ToolOptions />}
 			<div className="flex min-h-0 flex-1">
-				{showToolbar && <Toolbar />}
+				{showToolbar && !isPortraitDock && <Toolbar />}
 				<main className="canvas-backdrop relative min-w-0 flex-1">
 					<PixelCanvas />
+					{isCompact && <CanvasHud showStatusInfo={panels.statusBar} />}
 				</main>
 				{hasRightSidebar && (
-					<aside className="editor-scrollbar w-69 shrink-0 space-y-2.5 overflow-y-auto border-l border-(--pe-border) bg-(--pe-bg-chrome) p-2.5">
+					<aside className="pe-studio-panel-container editor-scrollbar w-69 shrink-0 space-y-2.5 overflow-y-auto border-l border-(--pe-border) bg-(--pe-bg-chrome) p-2.5">
 						{panels.colorPicker && <ColorPickerPanel />}
 						{panels.palette && <PalettePanel />}
 						{showDockedLayers && <LayersPanel />}
@@ -91,8 +173,54 @@ export const PixelEditor = (): FunctionComponent => {
 					</aside>
 				)}
 			</div>
-			{panels.frames && <Timeline />}
-			{panels.statusBar && <StatusBar />}
+			{panels.frames && (
+				<Timeline
+					collapsed={isCompact ? !compactTimelineOpen : undefined}
+					compact={isCompact}
+					hideHeaderWhenCollapsed={isPortraitDock}
+					narrow={isNarrow}
+					onCollapsedChange={
+						isCompact
+							? (nextCollapsed): void => {
+									setCompactTimelineOpen(!nextCollapsed);
+								}
+							: undefined
+					}
+				/>
+			)}
+			{isPortraitDock && showToolbar && (
+				<Toolbar
+					bottomSafeArea={!showPortraitDockBar}
+					orientation="horizontal"
+				/>
+			)}
+			{showPortraitDockBar && (
+				<PortraitBottomBar
+					activeTab={resolvedDrawerTab}
+					availableTabs={availableDrawerTabs}
+					drawerOpen={effectiveDrawerOpen}
+					previewLabel={previewLabel}
+					showFrames={panels.frames}
+					timelineOpen={compactTimelineOpen}
+					onOpenDrawerTab={openDrawerToTab}
+					onToggleTimeline={() => {
+						setCompactTimelineOpen((previous) => !previous);
+					}}
+				/>
+			)}
+			{!isCompact && panels.statusBar && <StatusBar />}
+			{isCompact && hasStudioPanels && (
+				<StudioPanelsDrawer
+					activeTab={resolvedDrawerTab}
+					availableTabs={availableDrawerTabs}
+					open={effectiveDrawerOpen}
+					panels={panels}
+					onSelectTab={setDrawerTab}
+					onClose={() => {
+						setDrawerOpen(false);
+					}}
+				/>
+			)}
 			<Dialogs />
 		</div>
 	);

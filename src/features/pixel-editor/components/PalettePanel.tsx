@@ -161,7 +161,7 @@ export const PalettePanel = (): FunctionComponent => {
 				</div>
 			</div>
 
-			<div className="grid grid-cols-8 gap-1">
+			<div className="pe-palette-grid grid gap-1">
 				{palette.map((swatch, index) => (
 					<div key={swatch} className="group relative">
 						<button
@@ -186,7 +186,7 @@ export const PalettePanel = (): FunctionComponent => {
 						/>
 						<button
 							aria-label={`Remove ${swatch}`}
-							className="absolute -top-1 -right-1 hidden h-3.5 w-3.5 items-center justify-center rounded-full bg-(--pe-bg-chrome) text-[9px] leading-none text-(--pe-text) ring-1 ring-(--pe-border-strong) group-hover:flex hover:bg-(--pe-danger) hover:text-white"
+							className="absolute -top-1 -right-1 hidden h-3.5 w-3.5 items-center justify-center rounded-full bg-(--pe-bg-chrome) text-[9px] leading-none text-(--pe-text) ring-1 ring-(--pe-border-strong) group-focus-within:flex group-hover:flex hover:bg-(--pe-danger) hover:text-white"
 							type="button"
 							onClick={() => {
 								removePaletteColor(index);

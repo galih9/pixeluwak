@@ -227,7 +227,7 @@ const TagDialog = ({
 			}
 			onClose={onClose}
 		>
-			<div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-3">
+			<div className="grid grid-cols-1 items-center gap-y-2 sm:grid-cols-[auto_1fr] sm:gap-x-3 sm:gap-y-3">
 				<span className="text-xs text-(--pe-text-muted)">Name</span>
 				<input
 					autoFocus
@@ -241,7 +241,7 @@ const TagDialog = ({
 					}}
 				/>
 				<span className="text-xs text-(--pe-text-muted)">Frames</span>
-				<div className="flex items-center gap-2">
+				<div className="flex flex-wrap items-center gap-2">
 					<input
 						aria-label="First frame"
 						className={`${inputClass} w-20`}
@@ -270,7 +270,7 @@ const TagDialog = ({
 					</span>
 				</div>
 				<span className="text-xs text-(--pe-text-muted)">Direction</span>
-				<div className="flex gap-1.5">
+				<div className="flex flex-wrap gap-1.5">
 					{DIRECTIONS.map(([value, label]) => (
 						<TextButton
 							key={value}
@@ -284,7 +284,7 @@ const TagDialog = ({
 					))}
 				</div>
 				<span className="text-xs text-(--pe-text-muted)">Color</span>
-				<div className="flex items-center gap-1.5">
+				<div className="flex flex-wrap items-center gap-1.5">
 					{TAG_COLORS.map((swatch) => (
 						<button
 							key={swatch}
@@ -493,9 +493,11 @@ const CelCell = ({
 
 const LayerRowHeader = ({
 	layerIndex,
+	columnWidth = NAMES,
 	onDropLayer,
 }: {
 	layerIndex: number;
+	columnWidth?: number;
 	onDropLayer: (fromIndex: number, toIndex: number) => void;
 }): FunctionComponent => {
 	const layer = useEditorStore((state) => state.layers[layerIndex]);
@@ -528,7 +530,7 @@ const LayerRowHeader = ({
 	return (
 		<div
 			draggable={!editing}
-			style={{ width: NAMES, height: ROW }}
+			style={{ width: columnWidth, height: ROW }}
 			className={`sticky left-0 z-5 flex shrink-0 items-center gap-1 border-r border-(--pe-border) px-1.5 ${
 				isActive
 					? "bg-(--pe-bg-active-row) text-(--pe-text)"
@@ -748,7 +750,21 @@ const FrameHeader = ({
 /*                                  Timeline                                  */
 /* -------------------------------------------------------------------------- */
 
-export const Timeline = (): FunctionComponent => {
+type TimelineProps = {
+	compact?: boolean;
+	narrow?: boolean;
+	collapsed?: boolean;
+	hideHeaderWhenCollapsed?: boolean;
+	onCollapsedChange?: (collapsed: boolean) => void;
+};
+
+export const Timeline = ({
+	compact = false,
+	narrow = false,
+	collapsed: controlledCollapsed,
+	hideHeaderWhenCollapsed = false,
+	onCollapsedChange,
+}: TimelineProps): FunctionComponent => {
 	usePlayback();
 	const showLayers = useUiSettingsStore((state) => state.panels.layers);
 	const frames = useEditorStore((state) => state.frames);
@@ -766,13 +782,15 @@ export const Timeline = (): FunctionComponent => {
 	const celClipboard = useEditorStore((state) => state.celClipboard);
 	const store = useEditorStore.getState();
 
-	const [collapsed, setCollapsed] = useState(false);
-	const [gridHeight, setGridHeight] = useState(148);
+	const [internalCollapsed, setInternalCollapsed] = useState(false);
+	const [gridHeight, setGridHeight] = useState(() => (compact ? 132 : 148));
 	const [range, setRange] = useState<Range>({ from: 0, to: 0 });
 	const [anchor, setAnchor] = useState(0);
 	const [editing, setEditing] = useState<FrameTag | null>(null);
 	const scrollRef = useRef<HTMLDivElement>(null);
 
+	const collapsed = controlledCollapsed ?? internalCollapsed;
+	const nameColumnWidth = narrow ? 132 : NAMES;
 	const columnWidth = showLayers ? COLUMN : FRAME_CARD_COLUMN;
 
 	// Moving outside the selected range (keys, playback, clicks) resets it.
@@ -791,13 +809,13 @@ export const Timeline = (): FunctionComponent => {
 		const scroller = scrollRef.current;
 		if (!scroller) return;
 		const left = currentFrame * columnWidth;
-		const visible = scroller.clientWidth - (showLayers ? NAMES : 0);
+		const visible = scroller.clientWidth - (showLayers ? nameColumnWidth : 0);
 		if (left < scroller.scrollLeft) {
 			scroller.scrollLeft = left;
 		} else if (left + columnWidth > scroller.scrollLeft + visible) {
 			scroller.scrollLeft = left + columnWidth - visible;
 		}
-	}, [currentFrame, columnWidth, showLayers]);
+	}, [currentFrame, columnWidth, showLayers, nameColumnWidth]);
 
 	// Top layer is listed first, like Aseprite / Photoshop.
 	const order = Array.from(
@@ -842,22 +860,47 @@ export const Timeline = (): FunctionComponent => {
 		store.selectCel(layerIndex, frameIndex);
 	};
 
+	const maxAllowedHeight =
+		compact && typeof window !== "undefined"
+			? Math.max(120, Math.min(440, Math.round(window.innerHeight * 0.45)))
+			: 440;
+	const effectiveGridHeight = compact
+		? Math.min(gridHeight, maxAllowedHeight)
+		: gridHeight;
+
 	const startResize = (event: React.PointerEvent<HTMLDivElement>): void => {
 		event.preventDefault();
 		const startY = event.clientY;
-		const startHeight = gridHeight;
+		const startHeight = effectiveGridHeight;
 		const onMove = (moveEvent: PointerEvent): void => {
 			setGridHeight(
-				Math.max(96, Math.min(440, startHeight + (startY - moveEvent.clientY)))
+				Math.max(
+					96,
+					Math.min(maxAllowedHeight, startHeight + (startY - moveEvent.clientY))
+				)
 			);
 		};
 		const onUp = (): void => {
 			window.removeEventListener("pointermove", onMove);
 			window.removeEventListener("pointerup", onUp);
+			window.removeEventListener("pointercancel", onUp);
 		};
 		window.addEventListener("pointermove", onMove);
 		window.addEventListener("pointerup", onUp);
+		window.addEventListener("pointercancel", onUp);
 	};
+
+	const toggleCollapsed = (): void => {
+		const next = !collapsed;
+		if (controlledCollapsed === undefined) {
+			setInternalCollapsed(next);
+		}
+		onCollapsedChange?.(next);
+	};
+
+	if (collapsed && hideHeaderWhenCollapsed) {
+		return null;
+	}
 
 	const small = "h-7 w-7";
 	const icon = "h-4 w-4";
@@ -866,19 +909,25 @@ export const Timeline = (): FunctionComponent => {
 		<section className="shrink-0 border-t border-(--pe-border) bg-(--pe-bg-panel)">
 			{!collapsed && (
 				<div
-					className="h-1 cursor-row-resize bg-transparent transition-colors hover:bg-(--pe-accent-soft)"
 					title="Drag to resize timeline height"
+					className={
+						compact
+							? "flex h-3 cursor-row-resize touch-none items-center justify-center bg-transparent transition-colors hover:bg-(--pe-accent-soft)"
+							: "h-1 cursor-row-resize touch-none bg-transparent transition-colors hover:bg-(--pe-accent-soft)"
+					}
 					onPointerDown={startResize}
-				/>
+				>
+					{compact && (
+						<span className="h-1 w-8 rounded-full bg-(--pe-border-strong)" />
+					)}
+				</div>
 			)}
 			{/* ----------------------------- toolbar ----------------------------- */}
 			<div className="editor-scrollbar flex h-9 items-center gap-1 overflow-x-auto px-2">
 				<IconButton
 					className={small}
 					label={collapsed ? "Show timeline" : "Hide timeline"}
-					onClick={() => {
-						setCollapsed(!collapsed);
-					}}
+					onClick={toggleCollapsed}
 				>
 					{collapsed ? (
 						<ChevronUpIcon className={icon} />
@@ -1285,17 +1334,17 @@ export const Timeline = (): FunctionComponent => {
 				<div
 					ref={scrollRef}
 					className="editor-scrollbar overflow-auto border-t border-(--pe-border-subtle) bg-(--pe-bg-chrome)"
-					style={{ maxHeight: gridHeight }}
+					style={{ maxHeight: effectiveGridHeight }}
 				>
 					{showLayers ? (
-						<div style={{ width: NAMES + frameCount * COLUMN }}>
+						<div style={{ width: nameColumnWidth + frameCount * COLUMN }}>
 							<div className="sticky top-0 z-10 flex bg-(--pe-bg-panel)">
 								<div
 									className="sticky left-0 z-10 flex shrink-0 flex-col justify-between border-r border-(--pe-border) bg-(--pe-bg-panel) px-2 py-1 text-[10px] uppercase tracking-wide text-(--pe-text-muted)"
-									style={{ width: NAMES }}
+									style={{ width: nameColumnWidth }}
 								>
 									<span>Tags</span>
-									<span>Layers ↓ · Frames →</span>
+									<span className="truncate">Layers ↓ · Frames →</span>
 								</div>
 								<div className="flex flex-col">
 									<div className="py-0.5">
@@ -1332,6 +1381,7 @@ export const Timeline = (): FunctionComponent => {
 									}`}
 								>
 									<LayerRowHeader
+										columnWidth={nameColumnWidth}
 										layerIndex={layerIndex}
 										onDropLayer={store.moveLayerTo}
 									/>
