@@ -28,16 +28,16 @@ Everything needed for drawing, layering, animating, and exporting is built direc
 
 | Area | What It Does | Key Controls / Shortcuts |
 | :--- | :--- | :--- |
-| **TopBar** | Project name, canvas size/resize, open/save/export, undo/redo, flip H/V, auto outline, grid, zoom, help | `Ctrl+S` (save `.pixel.json`), `Ctrl+O` (open `.pixel.json` or PNG/GIF/BMP/WEBP up to `128×128`), `Ctrl+E` (export), `Shift+O` (Auto outline), `#` (grid), `?` (shortcuts) |
+| **TopBar** | Project name, canvas size/resize, open/save/export, undo/redo, flip H/V, auto outline, grid, zoom, help | `Ctrl+S` (save `.pixel.json`), `Ctrl+O` (open `.pixel.json` or PNG/GIF/BMP/WEBP up to `512×512`), `Ctrl+E` (export), `Shift+O` (Auto outline), `#` (grid), `?` (shortcuts) |
 | **ToolOptions Bar** | Context-sensitive settings for the active tool (brush size/shape, Pixel perfect, Mirror symmetry, Filled, Contiguous, Blur, Text) | `[` / `]` (brush size `1–16px`), `X` (swap Left/Right colors) |
 | **Left Toolbar** | Drawing, shape, fill, selection, text, blur, move, and pan tools | Single-key tool shortcuts (`B`, `E`, `G`, `I`, `L`, `U`, `O`, `M`, `Q`, `W`, `D`, `R`, `T`, `V`, `H`) |
-| **Canvas** | Integer-zoomed pixel viewport (`1×`–`96×`) with optional pixel grid and `8px` major grid lines | Wheel or `+`/`-` (zoom), `0` (fit to screen), `Space + drag` or middle-drag (pan), Right-click (paint with secondary color), `Alt + click` (pick color) |
+| **Canvas** | Integer-zoomed pixel viewport (`0.5×`–`96×`) with optional pixel grid and `8px` major grid lines | Wheel or `+`/`-` (zoom), `0` (fit to screen), `Space + drag` or middle-drag (pan), Right-click (paint with secondary color), `Alt + click` (pick color) |
 | **Right Sidebar** | **Color & Palette**, **Layers** (up to 32), and live **Preview** (`N×` and actual `1×` size) | `Shift+N` (new layer), `↑`/`↓` (switch layer when no selection), `Alt+click` eye icon (solo layer) |
 | **Bottom Timeline** | Frame-by-frame animation (up to 256 frames), cel matrix, tags/loops, duration, and onion skin | `Alt+N` (duplicate frame), `Alt+Shift+N` (new empty frame), `Enter` (play/pause), `,`/`.` or `←`/`→` (prev/next frame), `K` (onion skin) |
 | **StatusBar** | Live cursor `(x, y)` coordinates, canvas dimensions, zoom level, and selection size | Useful for coordinate-accurate alignment and edge checks |
 
 ### Canvas Sizing & Resizing
-* Click **New / resize canvas** in the TopBar to pick presets (`8×8`, `16×16`, `24×24`, `32×32`, `48×48`, `64×64`, `128×128`) or any custom size up to `128×128` (default `32×32`).
+* Click **New / resize canvas** in the TopBar to pick presets (`8×8`, `16×16`, `24×24`, `32×32`, `48×48`, `64×64`, `128×128`, `256×256`, `512×512`) or any custom size up to `512×512` (default `32×32`).
 * Need breathing room after starting? Use **Resize current** with `center` or `top-left` anchor instead of **Create new** so you don't lose existing pixels.
 
 ---
@@ -110,7 +110,7 @@ Use the **Layers** panel (`Shift+N` to add a layer, `Alt+click` the eye icon to 
 
 ### Dithering & Anti-Aliasing
 * **Avoid dithering and anti-aliasing on tiny sprites (`< 32px`)** where every pixel carries structural weight.
-* On larger sprites (`32px–128px`), place checkerboard dithering manually with `1px` **Pencil (`B`)** (`Left`/`Right` colors) for texture, or place intermediate-value pixels strictly in high-contrast corners for manual anti-aliasing.
+* On larger sprites (`32px–512px`), place checkerboard dithering manually with `1px` **Pencil (`B`)** (`Left`/`Right` colors) for texture, or place intermediate-value pixels strictly in high-contrast corners for manual anti-aliasing.
 * **Blur brush (`R`)**: Use sparingly on larger sprites or soft backgrounds; enable **Snap to palette** and **Keep transparency** in ToolOptions so softened pixels never introduce off-palette color bloat.
 
 ### Pixel Text (`T`)

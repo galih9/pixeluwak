@@ -31,7 +31,12 @@ export const PreviewPanel = (): FunctionComponent => {
 	const playTag = useEditorStore((state) => state.playTag);
 	const playing = useEditorStore((state) => state.playing);
 	const [loop, setLoop] = useState(false);
-	const scale = Math.max(1, Math.floor(BOX / Math.max(width, height)));
+	const largestSide = Math.max(width, height);
+	const integerScale = Math.floor(BOX / largestSide);
+	const fitted = largestSide > BOX;
+	const displayScale = fitted ? BOX / largestSide : Math.max(1, integerScale);
+	const displayWidth = Math.max(1, Math.round(width * displayScale));
+	const displayHeight = Math.max(1, Math.round(height * displayScale));
 	// While the canvas itself plays, the preview simply mirrors it.
 	const animate = loop && frameCount > 1 && !playing;
 
@@ -96,19 +101,19 @@ export const PreviewPanel = (): FunctionComponent => {
 			}
 		>
 			<div className="flex flex-wrap items-end gap-3">
-				<div className="preview-checker flex items-center justify-center rounded-lg border border-[var(--pe-border)] p-1">
+				<div className="preview-checker flex items-center justify-center rounded-lg border border-(--pe-border) p-1">
 					<canvas
 						ref={largeRef}
 						style={{
-							width: width * scale,
-							height: height * scale,
+							width: displayWidth,
+							height: displayHeight,
 							imageRendering: "pixelated",
 						}}
 					/>
 				</div>
-				{scale > 1 && (
+				{!fitted && integerScale > 1 && (
 					<div
-						className="preview-checker rounded-lg border border-[var(--pe-border)] p-1"
+						className="preview-checker rounded-lg border border-(--pe-border) p-1"
 						title="Actual size"
 					>
 						<canvas
@@ -118,9 +123,13 @@ export const PreviewPanel = (): FunctionComponent => {
 					</div>
 				)}
 			</div>
-			<p className="mt-2 text-[11px] text-[var(--pe-text-muted)]">
+			<p className="mt-2 text-[11px] text-(--pe-text-muted)">
 				{width}×{height}px ·{" "}
-				{scale > 1 ? `preview ${scale}× and 1×` : "actual size"}
+				{fitted
+					? `preview ${Math.round(displayScale * 100)}%`
+					: integerScale > 1
+						? `preview ${integerScale}× and 1×`
+						: "actual size"}
 				{animate && ` · looping ${loopName}`}
 			</p>
 		</PanelCard>

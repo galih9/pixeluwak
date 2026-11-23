@@ -5,6 +5,7 @@ import type {
 	DitherPattern,
 	PixelBuffer,
 	Point,
+	ResampleAlgorithm,
 	ResizeAnchor,
 	SelectionMask,
 	SelectionMode,
@@ -941,6 +942,42 @@ export function flipPixels(
 	return { pixels, mask: mask ? nextMask : null };
 }
 
+export function resizeAnchorOffset(
+	oldWidth: number,
+	oldHeight: number,
+	newWidth: number,
+	newHeight: number,
+	anchor: ResizeAnchor
+): { offsetX: number; offsetY: number } {
+	let offsetX = Math.floor((newWidth - oldWidth) / 2);
+	if (
+		anchor === "top-left" ||
+		anchor === "left" ||
+		anchor === "bottom-left"
+	) {
+		offsetX = 0;
+	} else if (
+		anchor === "top-right" ||
+		anchor === "right" ||
+		anchor === "bottom-right"
+	) {
+		offsetX = newWidth - oldWidth;
+	}
+
+	let offsetY = Math.floor((newHeight - oldHeight) / 2);
+	if (anchor === "top-left" || anchor === "top" || anchor === "top-right") {
+		offsetY = 0;
+	} else if (
+		anchor === "bottom-left" ||
+		anchor === "bottom" ||
+		anchor === "bottom-right"
+	) {
+		offsetY = newHeight - oldHeight;
+	}
+
+	return { offsetX, offsetY };
+}
+
 export function resizePixels(
 	data: PixelBuffer,
 	oldWidth: number,
@@ -950,10 +987,13 @@ export function resizePixels(
 	anchor: ResizeAnchor
 ): PixelBuffer {
 	const result = createPixels(newWidth, newHeight);
-	const offsetX =
-		anchor === "center" ? Math.floor((newWidth - oldWidth) / 2) : 0;
-	const offsetY =
-		anchor === "center" ? Math.floor((newHeight - oldHeight) / 2) : 0;
+	const { offsetX, offsetY } = resizeAnchorOffset(
+		oldWidth,
+		oldHeight,
+		newWidth,
+		newHeight,
+		anchor
+	);
 	for (let y = 0; y < oldHeight; y++) {
 		const targetY = y + offsetY;
 		if (targetY < 0 || targetY >= newHeight) continue;
@@ -963,6 +1003,224 @@ export function resizePixels(
 			result[targetY * newWidth + targetX] = data[y * oldWidth + x] ?? 0;
 		}
 	}
+	return result;
+}
+
+type AxisSample = { index: number; weight: number };
+
+function buildAxisWeights(
+	oldSize: number,
+	newSize: number
+): Array<Array<AxisSample>> {
+	const weights: Array<Array<AxisSample>> = [];
+	if (oldSize >= newSize) {
+		for (let target = 0; target < newSize; target++) {
+			const rangeStart = (target * oldSize) / newSize;
+			const rangeEnd = ((target + 1) * oldSize) / newSize;
+			const span = rangeEnd - rangeStart;
+			const first = Math.floor(rangeStart);
+			const last = Math.min(oldSize - 1, Math.ceil(rangeEnd) - 1);
+			const entries: Array<AxisSample> = [];
+			for (let index = first; index <= last; index++) {
+				const overlap =
+					Math.min(rangeEnd, index + 1) - Math.max(rangeStart, index);
+				if (overlap > 0) {
+					entries.push({ index, weight: overlap / span });
+				}
+			}
+			weights.push(entries);
+		}
+		return weights;
+	}
+
+	for (let target = 0; target < newSize; target++) {
+		const sample = ((target + 0.5) * oldSize) / newSize - 0.5;
+		const left = Math.max(0, Math.min(oldSize - 1, Math.floor(sample)));
+		const right = Math.min(oldSize - 1, left + 1);
+		const fraction = Math.max(0, Math.min(1, sample - left));
+		if (left === right || fraction === 0) {
+			weights.push([{ index: left, weight: 1 }]);
+		} else {
+			weights.push([
+				{ index: left, weight: 1 - fraction },
+				{ index: right, weight: fraction },
+			]);
+		}
+	}
+	return weights;
+}
+
+/**
+ * Resamples a pixel buffer from `oldWidth × oldHeight` to `newWidth × newHeight`.
+ * - `"nearest"`: crisp pixel-art point sampling
+ * - `"majority"`: block mode picking the most frequent color per cell
+ * - `"smooth"`: premultiplied-alpha separable area/bilinear filter
+ */
+export function resamplePixels(
+	data: PixelBuffer,
+	oldWidth: number,
+	oldHeight: number,
+	newWidth: number,
+	newHeight: number,
+	algorithm: ResampleAlgorithm = "nearest"
+): PixelBuffer {
+	if (oldWidth === newWidth && oldHeight === newHeight) {
+		return data.slice();
+	}
+	const result = createPixels(newWidth, newHeight);
+	if (oldWidth <= 0 || oldHeight <= 0 || newWidth <= 0 || newHeight <= 0) {
+		return result;
+	}
+
+	if (algorithm === "nearest") {
+		for (let y = 0; y < newHeight; y++) {
+			const sourceY = Math.min(
+				oldHeight - 1,
+				Math.floor(((y + 0.5) * oldHeight) / newHeight)
+			);
+			const sourceRow = sourceY * oldWidth;
+			const targetRow = y * newWidth;
+			for (let x = 0; x < newWidth; x++) {
+				const sourceX = Math.min(
+					oldWidth - 1,
+					Math.floor(((x + 0.5) * oldWidth) / newWidth)
+				);
+				result[targetRow + x] = data[sourceRow + sourceX] ?? TRANSPARENT;
+			}
+		}
+		return result;
+	}
+
+	if (algorithm === "majority") {
+		const counts = new Map<number, number>();
+		for (let y = 0; y < newHeight; y++) {
+			const startY = Math.floor((y * oldHeight) / newHeight);
+			const endY = Math.min(
+				oldHeight,
+				Math.max(startY + 1, Math.floor(((y + 1) * oldHeight) / newHeight))
+			);
+			const centerY = Math.min(
+				oldHeight - 1,
+				Math.floor(((y + 0.5) * oldHeight) / newHeight)
+			);
+			const targetRow = y * newWidth;
+			for (let x = 0; x < newWidth; x++) {
+				const startX = Math.floor((x * oldWidth) / newWidth);
+				const endX = Math.min(
+					oldWidth,
+					Math.max(startX + 1, Math.floor(((x + 1) * oldWidth) / newWidth))
+				);
+				if (endX - startX === 1 && endY - startY === 1) {
+					result[targetRow + x] =
+						data[startY * oldWidth + startX] ?? TRANSPARENT;
+					continue;
+				}
+				counts.clear();
+				for (let sourceY = startY; sourceY < endY; sourceY++) {
+					const sourceRow = sourceY * oldWidth;
+					for (let sourceX = startX; sourceX < endX; sourceX++) {
+						const color = data[sourceRow + sourceX] ?? TRANSPARENT;
+						counts.set(color, (counts.get(color) ?? 0) + 1);
+					}
+				}
+				const centerX = Math.min(
+					oldWidth - 1,
+					Math.floor(((x + 0.5) * oldWidth) / newWidth)
+				);
+				const centerColor = data[centerY * oldWidth + centerX] ?? TRANSPARENT;
+				let bestColor = centerColor;
+				let bestCount = -1;
+				for (const [color, count] of counts) {
+					if (count > bestCount) {
+						bestColor = color;
+						bestCount = count;
+					} else if (count === bestCount) {
+						const currentIsCenter = color === centerColor;
+						const bestIsCenter = bestColor === centerColor;
+						if (currentIsCenter && !bestIsCenter) {
+							bestColor = color;
+						} else if (
+							!bestIsCenter &&
+							packedAlpha(color) > 0 &&
+							packedAlpha(bestColor) === 0
+						) {
+							bestColor = color;
+						}
+					}
+				}
+				result[targetRow + x] = bestColor;
+			}
+		}
+		return result;
+	}
+
+	const weightsX = buildAxisWeights(oldWidth, newWidth);
+	const weightsY = buildAxisWeights(oldHeight, newHeight);
+	const sourceBytes = new Uint8Array(
+		data.buffer,
+		data.byteOffset,
+		data.byteLength
+	);
+	const horizontal = new Float32Array(newWidth * oldHeight * 4);
+
+	for (let y = 0; y < oldHeight; y++) {
+		const sourceRow = y * oldWidth;
+		const temporaryRow = y * newWidth;
+		for (let x = 0; x < newWidth; x++) {
+			const entries = weightsX[x] ?? [];
+			let redSum = 0;
+			let greenSum = 0;
+			let blueSum = 0;
+			let alphaSum = 0;
+			for (const entry of entries) {
+				const byteOffset = (sourceRow + entry.index) * 4;
+				const alpha = (sourceBytes[byteOffset + 3] ?? 0) / 255;
+				const weightedAlpha = alpha * entry.weight;
+				redSum += (sourceBytes[byteOffset] ?? 0) * weightedAlpha;
+				greenSum += (sourceBytes[byteOffset + 1] ?? 0) * weightedAlpha;
+				blueSum += (sourceBytes[byteOffset + 2] ?? 0) * weightedAlpha;
+				alphaSum += weightedAlpha;
+			}
+			const temporaryOffset = (temporaryRow + x) * 4;
+			horizontal[temporaryOffset] = redSum;
+			horizontal[temporaryOffset + 1] = greenSum;
+			horizontal[temporaryOffset + 2] = blueSum;
+			horizontal[temporaryOffset + 3] = alphaSum;
+		}
+	}
+
+	const outputBytes = new Uint8ClampedArray(result.buffer);
+	for (let y = 0; y < newHeight; y++) {
+		const entries = weightsY[y] ?? [];
+		const targetRow = y * newWidth;
+		for (let x = 0; x < newWidth; x++) {
+			let redSum = 0;
+			let greenSum = 0;
+			let blueSum = 0;
+			let alphaSum = 0;
+			for (const entry of entries) {
+				const temporaryOffset = (entry.index * newWidth + x) * 4;
+				const weight = entry.weight;
+				redSum += (horizontal[temporaryOffset] ?? 0) * weight;
+				greenSum += (horizontal[temporaryOffset + 1] ?? 0) * weight;
+				blueSum += (horizontal[temporaryOffset + 2] ?? 0) * weight;
+				alphaSum += (horizontal[temporaryOffset + 3] ?? 0) * weight;
+			}
+			const outputOffset = (targetRow + x) * 4;
+			if (alphaSum <= 1e-6) {
+				outputBytes[outputOffset] = 0;
+				outputBytes[outputOffset + 1] = 0;
+				outputBytes[outputOffset + 2] = 0;
+				outputBytes[outputOffset + 3] = 0;
+			} else {
+				outputBytes[outputOffset] = Math.round(redSum / alphaSum);
+				outputBytes[outputOffset + 1] = Math.round(greenSum / alphaSum);
+				outputBytes[outputOffset + 2] = Math.round(blueSum / alphaSum);
+				outputBytes[outputOffset + 3] = Math.round(alphaSum * 255);
+			}
+		}
+	}
+
 	return result;
 }
 

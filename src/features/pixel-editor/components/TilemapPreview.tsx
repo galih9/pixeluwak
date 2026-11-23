@@ -45,7 +45,7 @@ const PATTERNS: Array<{ id: TileMapPattern; label: string; hint: string }> = [
 ];
 
 const selectClass =
-	"rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-1 text-xs text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]";
+	"rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-1.5 py-1 text-xs text-(--pe-text) outline-none focus:border-(--pe-accent)";
 
 /**
  * Live preview of the canvas used as a tile in a tilemap. `box` is the area
@@ -122,7 +122,7 @@ const TilemapPreview = ({
 	useEffect(() => subscribeFrames(draw), [draw, width, height]);
 
 	return (
-		<div className="space-y-2 text-xs text-[var(--pe-text-secondary)]">
+		<div className="space-y-2 text-xs text-(--pe-text-secondary)">
 			<div className="flex flex-wrap gap-1.5">
 				{MAP_TYPES.map((entry) => (
 					<TextButton
@@ -139,7 +139,7 @@ const TilemapPreview = ({
 			</div>
 
 			<div className="flex flex-wrap items-center gap-1.5">
-				<span className="text-[var(--pe-text-muted)]">Map</span>
+				<span className="text-(--pe-text-muted)">Map</span>
 				{TILEMAP_SIZES.map((option) => (
 					<TextButton
 						key={option}
@@ -156,7 +156,7 @@ const TilemapPreview = ({
 
 			{type === "top-down" && (
 				<div className="flex flex-wrap items-center gap-1.5">
-					<span className="text-[var(--pe-text-muted)]">Cells</span>
+					<span className="text-(--pe-text-muted)">Cells</span>
 					{PATTERNS.map((entry) => (
 						<TextButton
 							key={entry.id}
@@ -174,9 +174,9 @@ const TilemapPreview = ({
 
 			{type === "isometric" && (
 				<label className="flex items-center gap-2">
-					<span className="text-[var(--pe-text-muted)]">Ground height</span>
+					<span className="text-(--pe-text-muted)">Ground height</span>
 					<input
-						className="w-16 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 tabular-nums text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
+						className="w-16 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 tabular-nums text-(--pe-text) outline-none focus:border-(--pe-accent)"
 						max={height}
 						min={1}
 						placeholder={String(Math.floor(width / 2))}
@@ -190,13 +190,13 @@ const TilemapPreview = ({
 							);
 						}}
 					/>
-					<span className="text-[var(--pe-text-muted)]">px</span>
+					<span className="text-(--pe-text-muted)">px</span>
 				</label>
 			)}
 
 			{type === "hexagonal" && (
 				<label className="flex items-center gap-2">
-					<span className="text-[var(--pe-text-muted)]">Orientation</span>
+					<span className="text-(--pe-text-muted)">Orientation</span>
 					<select
 						className={selectClass}
 						value={hexOrientation}
@@ -220,7 +220,7 @@ const TilemapPreview = ({
 
 			<div className="editor-scrollbar max-h-[70vh] overflow-auto">
 				<div
-					className="preview-checker inline-block rounded-lg border border-[var(--pe-border)]"
+					className="preview-checker inline-block rounded-lg border border-(--pe-border)"
 					style={{ minWidth: 24, minHeight: 24 }}
 				>
 					<canvas
@@ -235,7 +235,7 @@ const TilemapPreview = ({
 				</div>
 			</div>
 
-			<p className="text-[11px] text-[var(--pe-text-muted)]">
+			<p className="text-[11px] text-(--pe-text-muted)">
 				{width}×{height}px tile · map {mapSize.width}×{mapSize.height}px at{" "}
 				{mapSize.scale}×
 				{type === "top-down" && pattern === "rotate" && !square
@@ -243,7 +243,7 @@ const TilemapPreview = ({
 					: ""}
 			</p>
 			{typeInfo && (
-				<p className="text-[11px] text-[var(--pe-text-muted)]">{typeInfo.hint}</p>
+				<p className="text-[11px] text-(--pe-text-muted)">{typeInfo.hint}</p>
 			)}
 		</div>
 	);

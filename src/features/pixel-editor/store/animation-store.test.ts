@@ -236,4 +236,78 @@ describe("animation frames in the store", () => {
 		expect(celAt(0, 0, 0)).toBe(0xff_00_ff_00);
 		expect(celAt(0, 1, 1)).toBe(0xff_00_ff_00);
 	});
+
+	it("scales multi-frame linked cels and reference layers with undo/redo", () => {
+		get().newCanvas(8, 8);
+		// Paint top-left 2x2 block on frame 0 layer 0.
+		const first = get().pixels.slice();
+		first[0] = RED;
+		first[1] = RED;
+		first[8] = RED;
+		first[9] = RED;
+		get().commitPixels(first);
+
+		// Link frame 1 on layer 0.
+		get().addFrame();
+		get().linkCels(0, 0, 1);
+
+		// Add layer 1 and paint bottom-right 2x2 on frame 1.
+		get().addLayer();
+		const second = get().pixels.slice();
+		second[6 * 8 + 6] = BLUE;
+		second[6 * 8 + 7] = BLUE;
+		second[7 * 8 + 6] = BLUE;
+		second[7 * 8 + 7] = BLUE;
+		get().commitPixels(second);
+
+		// Add a reference layer to verify proportional scaling.
+		get().addReferenceLayer({
+			src: "data:image/png;base64,iVBORw0KGgo=",
+			naturalWidth: 100,
+			naturalHeight: 100,
+			x: 2,
+			y: 2,
+			width: 4,
+			height: 4,
+			smooth: true,
+		});
+
+		get().resizeCanvas(4, 4, { mode: "scale", algorithm: "nearest" });
+		expect(get().width).toBe(4);
+		expect(get().height).toBe(4);
+		expect(celAt(0, 1, 0)).toBe(RED);
+		expect(celAt(1, 1, 0)).toBe(RED);
+		expect(celAt(1, 2, 3 * 4 + 3)).toBe(BLUE);
+
+		// Linked cel buffers stay shared across frames 0 and 1 on layer 0.
+		const layer0Id = get().layers[1]!.id;
+		expect(get().frames[0]?.cels[layer0Id]).toBe(
+			get().frames[1]?.cels[layer0Id]
+		);
+
+		const referenceLayer = get().layers.find(
+			(layer) => layer.kind === "reference"
+		);
+		expect(referenceLayer?.reference).toMatchObject({
+			x: 1,
+			y: 1,
+			width: 2,
+			height: 2,
+		});
+
+		get().undo();
+		expect(get().width).toBe(8);
+		expect(get().height).toBe(8);
+		expect(celAt(0, 1, 0)).toBe(RED);
+		expect(celAt(1, 2, 7 * 8 + 7)).toBe(BLUE);
+		expect(
+			get().layers.find((layer) => layer.kind === "reference")?.reference
+		).toMatchObject({ x: 2, y: 2, width: 4, height: 4 });
+
+		get().redo();
+		expect(get().width).toBe(4);
+		expect(get().height).toBe(4);
+		expect(celAt(0, 1, 0)).toBe(RED);
+		expect(celAt(1, 2, 3 * 4 + 3)).toBe(BLUE);
+	});
 });

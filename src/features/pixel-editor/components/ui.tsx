@@ -36,10 +36,10 @@ export const IconButton = ({
 		tabIndex={tabIndex}
 		title={label}
 		type="button"
-		className={`flex items-center justify-center rounded-lg border transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--pe-accent)] disabled:cursor-not-allowed disabled:opacity-35 ${
+		className={`pe-btn flex items-center justify-center rounded-lg border transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent) disabled:cursor-not-allowed disabled:opacity-35 ${
 			active
-				? "border-[var(--pe-accent-ring)] bg-[var(--pe-accent)] text-[var(--pe-accent-ink)] shadow-xs"
-				: "border-transparent text-[var(--pe-text-secondary)] hover:bg-[var(--pe-bg-control-hover)] hover:text-[var(--pe-text)]"
+				? "border-(--pe-accent-ring) bg-(--pe-accent) text-(--pe-accent-ink) shadow-xs"
+				: "border-transparent text-(--pe-text-secondary) hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text)"
 		} ${className}`}
 		onClick={onClick}
 	>
@@ -67,25 +67,25 @@ export const TextButton = ({
 	onClick,
 }: TextButtonProps): FunctionComponent => {
 	let style =
-		"border-[var(--pe-border)] bg-[var(--pe-bg-control)] text-[var(--pe-text)] hover:bg-[var(--pe-bg-control-hover)]";
+		"border-(--pe-border) bg-(--pe-bg-control) text-(--pe-text) hover:bg-(--pe-bg-control-hover)";
 	if (variant === "primary") {
 		style =
-			"border-[var(--pe-accent-ring)] bg-[var(--pe-accent)] text-[var(--pe-accent-ink)] hover:bg-[var(--pe-accent-hover)]";
+			"border-(--pe-accent-ring) bg-(--pe-accent) text-(--pe-accent-ink) hover:bg-(--pe-accent-hover)";
 	} else if (variant === "ghost") {
 		style =
-			"border-transparent bg-transparent text-[var(--pe-text-secondary)] hover:bg-[var(--pe-bg-control)] hover:text-[var(--pe-text)]";
+			"border-transparent bg-transparent text-(--pe-text-secondary) hover:bg-(--pe-bg-control) hover:text-(--pe-text)";
 	} else if (variant === "danger") {
 		style =
-			"border-[var(--pe-danger)] bg-[var(--pe-danger-soft)] text-[var(--pe-danger)] hover:opacity-90";
+			"border-(--pe-danger) bg-(--pe-danger-soft) text-(--pe-danger) hover:opacity-90";
 	}
 	if (active) {
 		style =
-			"border-[var(--pe-accent-ring)] bg-[var(--pe-accent)] text-[var(--pe-accent-ink)]";
+			"border-(--pe-accent-ring) bg-(--pe-accent) text-(--pe-accent-ink)";
 	}
 	return (
 		<button
 			aria-pressed={active || undefined}
-			className={`inline-flex h-7 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg border px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--pe-accent)] disabled:cursor-not-allowed disabled:opacity-40 ${style} ${className}`}
+			className={`pe-btn inline-flex h-7 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg border px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent) disabled:cursor-not-allowed disabled:opacity-40 ${style} ${className}`}
 			disabled={disabled}
 			title={title}
 			type="button"
@@ -103,10 +103,10 @@ export const Toggle = ({
 	checked,
 	onChange,
 }: ToggleProps): FunctionComponent => (
-	<label className="flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap text-xs text-[var(--pe-text-secondary)]">
+	<label className="flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap text-xs text-(--pe-text-secondary)">
 		<input
 			checked={checked}
-			className="h-3.5 w-3.5 rounded accent-[var(--pe-accent)]"
+			className="h-3.5 w-3.5 rounded accent-(--pe-accent)"
 			type="checkbox"
 			onChange={onChange}
 		/>
@@ -152,11 +152,11 @@ export const Switch = ({
 			}`}
 		>
 			<span className={hideLabel ? "sr-only" : "min-w-0 flex-1"}>
-				<span className="block text-xs font-medium text-[var(--pe-text)]">
+				<span className="block text-xs font-medium text-(--pe-text)">
 					{label}
 				</span>
 				{description && (
-					<span className="mt-0.5 block text-[11px] leading-snug text-[var(--pe-text-muted)]">
+					<span className="mt-0.5 block text-[11px] leading-snug text-(--pe-text-muted)">
 						{description}
 					</span>
 				)}
@@ -200,13 +200,13 @@ export const PanelCard = ({
 
 	return (
 		<section
-			className={`rounded-xl border border-[var(--pe-border)] bg-[var(--pe-bg-panel)] p-3 shadow-xs ${className}`}
+			className={`pe-panel-card rounded-xl border border-(--pe-border) bg-(--pe-bg-panel) p-3 shadow-xs ${className}`}
 		>
 			<div className="flex items-center justify-between gap-2">
 				{collapsible ? (
 					<button
 						aria-expanded={open}
-						className="flex min-w-0 items-center gap-1 text-left text-[11px] font-semibold uppercase tracking-wider text-[var(--pe-text-muted)] transition-colors hover:text-[var(--pe-text)]"
+						className="flex min-w-0 items-center gap-1 text-left text-[11px] font-semibold uppercase tracking-wider text-(--pe-text-muted) transition-colors hover:text-(--pe-text)"
 						type="button"
 						onClick={() => {
 							setOpen((current) => !current);
@@ -219,18 +219,18 @@ export const PanelCard = ({
 						)}
 						<span className="truncate">{title}</span>
 						{badge !== undefined && (
-							<span className="rounded-full bg-[var(--pe-bg-control)] px-1.5 py-px text-[10px] font-medium text-[var(--pe-text-secondary)]">
+							<span className="rounded-full bg-(--pe-bg-control) px-1.5 py-px text-[10px] font-medium text-(--pe-text-secondary)">
 								{badge}
 							</span>
 						)}
 					</button>
 				) : (
 					<div className="flex min-w-0 items-center gap-1.5">
-						<h2 className="truncate text-[11px] font-semibold uppercase tracking-wider text-[var(--pe-text-muted)]">
+						<h2 className="truncate text-[11px] font-semibold uppercase tracking-wider text-(--pe-text-muted)">
 							{title}
 						</h2>
 						{badge !== undefined && (
-							<span className="rounded-full bg-[var(--pe-bg-control)] px-1.5 py-px text-[10px] font-medium text-[var(--pe-text-secondary)]">
+							<span className="rounded-full bg-(--pe-bg-control) px-1.5 py-px text-[10px] font-medium text-(--pe-text-secondary)">
 								{badge}
 							</span>
 						)}
@@ -313,7 +313,7 @@ export const Modal = ({
 			ref={dialogReference}
 			aria-labelledby={headingId}
 			{...closedByAttribute}
-			className={`editor-modal max-h-[88dvh] w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-[var(--pe-border-strong)] bg-[var(--pe-bg-panel)] p-0 text-[var(--pe-text)] ${widthClass}`}
+			className={`editor-modal max-h-[88dvh] w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-0 text-(--pe-text) ${widthClass}`}
 			onCancel={(event): void => {
 				event.preventDefault();
 				onClose();
@@ -346,20 +346,20 @@ export const Modal = ({
 				pointerStartedOutside.current = false;
 			}}
 		>
-			<div className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--pe-border)] bg-[var(--pe-bg-chrome)] px-5 py-3.5">
+			<div className="flex shrink-0 items-start justify-between gap-4 border-b border-(--pe-border) bg-(--pe-bg-chrome) px-5 py-3.5">
 				<div className="min-w-0">
-					<h2 className="text-sm font-semibold text-[var(--pe-text)]" id={headingId}>
+					<h2 className="text-sm font-semibold text-(--pe-text)" id={headingId}>
 						{title}
 					</h2>
 					{subtitle && (
-						<p className="mt-0.5 text-xs text-[var(--pe-text-muted)]">
+						<p className="mt-0.5 text-xs text-(--pe-text-muted)">
 							{subtitle}
 						</p>
 					)}
 				</div>
 				<button
 					aria-label="Close dialog"
-					className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--pe-text-muted)] transition-colors hover:bg-[var(--pe-bg-control-hover)] hover:text-[var(--pe-text)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--pe-accent)]"
+					className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-(--pe-text-muted) transition-colors hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent)"
 					title="Close (Esc)"
 					type="button"
 					onClick={onClose}
@@ -367,10 +367,10 @@ export const Modal = ({
 					<XMarkIcon className="h-4 w-4" />
 				</button>
 			</div>
-			<div className="editor-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-4 text-sm text-[var(--pe-text-secondary)]">
+			<div className="editor-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-4 text-sm text-(--pe-text-secondary)">
 				{children}
 			</div>
-			<div className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--pe-border)] bg-[var(--pe-bg-chrome)] px-5 py-3">
+			<div className="flex shrink-0 items-center justify-end gap-2 border-t border-(--pe-border) bg-(--pe-bg-chrome) px-5 py-3">
 				{footer}
 			</div>
 		</dialog>
@@ -378,5 +378,5 @@ export const Modal = ({
 };
 
 export const Divider = (): FunctionComponent => (
-	<div className="mx-1 h-5 w-px shrink-0 bg-[var(--pe-border)]" />
+	<div className="mx-1 h-5 w-px shrink-0 bg-(--pe-border)" />
 );

@@ -1,15 +1,24 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { MAX_CANVAS_SIZE } from "../constants";
+import { createFrame } from "./animation";
+import { createLayer } from "./layers";
+import { parseDocument, PROJECT_FORMAT, serializeDocument } from "./persistence";
 import {
 	colorToHex,
 	parseColorInput,
 	pixelEditorApi,
 	unpackColor,
 } from "./pixelEditorApi";
+import { createPixels, encodePixels } from "./raster";
 
 describe("pixelEditorApi", () => {
 	beforeEach(() => {
 		pixelEditorApi.newCanvas(8, 8);
 		pixelEditorApi.clear();
+	});
+
+	afterEach(() => {
+		pixelEditorApi.newCanvas(8, 8);
 	});
 
 	describe("color parsing and unpacking", () => {
@@ -299,6 +308,78 @@ describe("pixelEditorApi", () => {
 				w: 8,
 				h: 8,
 			});
+		});
+	});
+
+	describe("canvas size limits", () => {
+		it("supports up to 512x512 canvases and clamps larger sizes", () => {
+			expect(MAX_CANVAS_SIZE).toBe(512);
+
+			pixelEditorApi.newCanvas(512, 512);
+			expect(pixelEditorApi.getDimensions()).toEqual({
+				width: 512,
+				height: 512,
+			});
+
+			pixelEditorApi.newCanvas(600, 600);
+			expect(pixelEditorApi.getDimensions()).toEqual({
+				width: 512,
+				height: 512,
+			});
+		});
+
+		it("persists and validates 512x512 projects while rejecting 513x513", () => {
+			const layer = createLayer(512, 512, "Layer 1", createPixels(512, 512));
+			const serialized = serializeDocument({
+				name: "large-canvas",
+				width: 512,
+				height: 512,
+				layers: [layer],
+				activeLayer: 0,
+				frames: [createFrame({ [layer.id]: layer.pixels })],
+				currentFrame: 0,
+				tags: [],
+				palette: ["#000000"],
+				primaryColor: "#000000",
+				secondaryColor: "#ffffff",
+			});
+
+			const parsed = parseDocument(serialized);
+			expect(parsed?.width).toBe(512);
+			expect(parsed?.height).toBe(512);
+
+			const oversizedPayload = JSON.stringify({
+				format: PROJECT_FORMAT,
+				version: 1,
+				name: "too-large",
+				width: 513,
+				height: 513,
+				pixels: encodePixels(createPixels(513, 513)),
+				palette: ["#000000"],
+				primaryColor: "#000000",
+				secondaryColor: "#ffffff",
+			});
+			expect(parseDocument(oversizedPayload)).toBeNull();
+		});
+
+		it("scales big canvases like 512x512 down to 128x128 or custom sizes via scaleCanvas", () => {
+			pixelEditorApi.newCanvas(512, 512);
+			pixelEditorApi.drawRect(0, 0, 16, 16, "#ff0000", { filled: true });
+			pixelEditorApi.scaleCanvas(128, 128, "nearest");
+
+			expect(pixelEditorApi.getDimensions()).toEqual({
+				width: 128,
+				height: 128,
+			});
+			expect(pixelEditorApi.getPixelHex(0, 0)).toBe("#ff0000");
+			expect(pixelEditorApi.getPixelHex(3, 3)).toBe("#ff0000");
+
+			pixelEditorApi.scaleCanvas(64, 32, "majority");
+			expect(pixelEditorApi.getDimensions()).toEqual({
+				width: 64,
+				height: 32,
+			});
+			expect(pixelEditorApi.getPixelHex(0, 0)).toBe("#ff0000");
 		});
 	});
 });

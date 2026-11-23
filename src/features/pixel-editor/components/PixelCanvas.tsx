@@ -416,14 +416,42 @@ function buildRenderSlices(layers: EditorState["layers"]): Array<RenderSlice> {
 	return slices;
 }
 
+function paintBufferToCanvas(
+	canvas: HTMLCanvasElement,
+	data: PixelBuffer,
+	width: number,
+	height: number
+): void {
+	if (canvas.width !== width || canvas.height !== height) {
+		canvas.width = width;
+		canvas.height = height;
+	}
+	const context = canvas.getContext("2d");
+	if (!context) return;
+	context.putImageData(
+		new ImageData(
+			new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength),
+			width,
+			height
+		),
+		0,
+		0
+	);
+}
+
 export const PixelCanvas = (): FunctionComponent => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const stageRef = useRef<Konva.Stage>(null);
 	const imageLayerRef = useRef<Konva.Layer>(null);
 	const overlayLayerRef = useRef<Konva.Layer>(null);
 	const sliceCanvasesRef = useRef<Map<string, HTMLCanvasElement>>(new Map());
-	const referenceImagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
-	const [, setReferenceImageTick] = useState(0);
+	const [sliceCanvases, setSliceCanvases] = useState<
+		Readonly<Record<string, HTMLCanvasElement>>
+	>({});
+	const loadingReferenceSourcesRef = useRef<Set<string>>(new Set());
+	const [referenceImages, setReferenceImages] = useState<
+		Readonly<Record<string, HTMLImageElement>>
+	>({});
 	const antsOffsetRef = useRef(0);
 	const [bufferCanvas] = useState(() => document.createElement("canvas"));
 	const [onionCanvas] = useState(() => document.createElement("canvas"));
@@ -467,44 +495,22 @@ export const PixelCanvas = (): FunctionComponent => {
 		for (const layer of layers) {
 			if (layer.kind !== "reference" || !layer.reference?.src) continue;
 			const source = layer.reference.src;
-			if (referenceImagesRef.current.has(source)) continue;
+			if (loadingReferenceSourcesRef.current.has(source)) continue;
+			loadingReferenceSourcesRef.current.add(source);
 			const image = new Image();
 			image.onload = (): void => {
-				setReferenceImageTick((tick) => tick + 1);
+				setReferenceImages((previous) => ({ ...previous, [source]: image }));
 			};
 			image.src = source;
-			referenceImagesRef.current.set(source, image);
 		}
 	}, [layers]);
 
 	/* --------------------------- pixel rendering -------------------------- */
 
 	useEffect(() => {
-		const putPixels = (
-			canvas: HTMLCanvasElement,
-			data: PixelBuffer,
-			w: number,
-			h: number
-		): void => {
-			if (canvas.width !== w || canvas.height !== h) {
-				canvas.width = w;
-				canvas.height = h;
-			}
-			const context = canvas.getContext("2d");
-			if (!context) return;
-			context.putImageData(
-				new ImageData(
-					new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength),
-					w,
-					h
-				),
-				0,
-				0
-			);
-		};
 		const draw = (state: EditorState, activePixels: PixelBuffer): void => {
 			const composited = compositeView(state, activePixels);
-			putPixels(bufferCanvas, composited, state.width, state.height);
+			paintBufferToCanvas(bufferCanvas, composited, state.width, state.height);
 			publishFrame(bufferCanvas);
 
 			const slices = buildRenderSlices(state.layers);
@@ -513,11 +519,13 @@ export const PixelCanvas = (): FunctionComponent => {
 					slice.kind === "pixels"
 			);
 			if (pixelSlices.length > 1) {
+				let addedSliceCanvas = false;
 				for (const slice of pixelSlices) {
 					let canvas = sliceCanvasesRef.current.get(slice.key);
 					if (!canvas) {
 						canvas = document.createElement("canvas");
 						sliceCanvasesRef.current.set(slice.key, canvas);
+						addedSliceCanvas = true;
 					}
 					const subset = state.layers
 						.slice(slice.startIndex, slice.endIndex + 1)
@@ -526,12 +534,15 @@ export const PixelCanvas = (): FunctionComponent => {
 								? { ...layer, pixels: activePixels }
 								: layer
 						);
-					putPixels(
+					paintBufferToCanvas(
 						canvas,
 						compositeLayers(subset, state.width * state.height),
 						state.width,
 						state.height
 					);
+				}
+				if (addedSliceCanvas) {
+					setSliceCanvases(Object.fromEntries(sliceCanvasesRef.current));
 				}
 			}
 			stageRef.current?.batchDraw();
@@ -591,24 +602,7 @@ export const PixelCanvas = (): FunctionComponent => {
 					: null;
 			setShowOnion(pixels !== null);
 			if (!pixels) return;
-			if (
-				onionCanvas.width !== state.width ||
-				onionCanvas.height !== state.height
-			) {
-				onionCanvas.width = state.width;
-				onionCanvas.height = state.height;
-			}
-			onionCanvas
-				.getContext("2d")
-				?.putImageData(
-					new ImageData(
-						new Uint8ClampedArray(pixels.buffer),
-						state.width,
-						state.height
-					),
-					0,
-					0
-				);
+			paintBufferToCanvas(onionCanvas, pixels, state.width, state.height);
 			imageLayerRef.current?.batchDraw();
 		};
 		render(getState());
@@ -1808,15 +1802,6 @@ export const PixelCanvas = (): FunctionComponent => {
 	else if (tool === "text") cursor = "text";
 	else if (tool === "layer-picker") cursor = "pointer";
 
-	const getSliceCanvas = (key: string): HTMLCanvasElement => {
-		let canvas = sliceCanvasesRef.current.get(key);
-		if (!canvas) {
-			canvas = document.createElement("canvas");
-			sliceCanvasesRef.current.set(key, canvas);
-		}
-		return canvas;
-	};
-
 	return (
 		<div
 			ref={containerRef}
@@ -1841,15 +1826,30 @@ export const PixelCanvas = (): FunctionComponent => {
 								context.setAttr("fillStyle", "#a1a1aa");
 								context.fillRect(0, 0, width, height);
 								context.setAttr("fillStyle", "#d4d4d8");
-								for (let y = 0, row = 0; y < height; y += cell, row++) {
-									for (let x = 0, column = 0; x < width; x += cell, column++) {
+								const visibleLeft = Math.max(0, -panX / zoom);
+								const visibleTop = Math.max(0, -panY / zoom);
+								const visibleRight = Math.min(
+									width,
+									(stageSize.width - panX) / zoom
+								);
+								const visibleBottom = Math.min(
+									height,
+									(stageSize.height - panY) / zoom
+								);
+								const startRow = Math.floor(visibleTop / cell);
+								const endRow = Math.ceil(visibleBottom / cell);
+								const startColumn = Math.floor(visibleLeft / cell);
+								const endColumn = Math.ceil(visibleRight / cell);
+								for (let row = startRow; row < endRow; row++) {
+									const y = row * cell;
+									const cellHeight = Math.min(cell, height - y);
+									if (cellHeight <= 0) continue;
+									for (let column = startColumn; column < endColumn; column++) {
 										if ((row + column) % 2 !== 0) continue;
-										context.fillRect(
-											x,
-											y,
-											Math.min(cell, width - x),
-											Math.min(cell, height - y)
-										);
+										const x = column * cell;
+										const cellWidth = Math.min(cell, width - x);
+										if (cellWidth <= 0) continue;
+										context.fillRect(x, y, cellWidth, cellHeight);
 									}
 								}
 							}}
@@ -1910,7 +1910,8 @@ export const PixelCanvas = (): FunctionComponent => {
 				{renderSlices.map((slice) => {
 					if (slice.kind === "pixels") {
 						const canvas =
-							pixelSliceCount <= 1 ? bufferCanvas : getSliceCanvas(slice.key);
+							pixelSliceCount <= 1 ? bufferCanvas : sliceCanvases[slice.key];
+						if (!canvas) return null;
 						return (
 							<Layer
 								key={slice.key}
@@ -1925,9 +1926,7 @@ export const PixelCanvas = (): FunctionComponent => {
 					}
 					const layer = layers.find((candidate) => candidate.id === slice.layerId);
 					const reference = layer?.reference;
-					const image = reference
-						? referenceImagesRef.current.get(reference.src)
-						: undefined;
+					const image = reference ? referenceImages[reference.src] : undefined;
 					if (
 						!layer ||
 						!reference ||

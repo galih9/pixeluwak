@@ -12,15 +12,17 @@ import type {
 	ToolCategory,
 } from "./types";
 
-export const MAX_CANVAS_SIZE = 128;
+export const MAX_CANVAS_SIZE = 512;
 export const MIN_CANVAS_SIZE = 1;
 export const DEFAULT_CANVAS_SIZE = 32;
-export const SIZE_PRESETS: Array<number> = [8, 16, 24, 32, 48, 64, 128];
+export const SIZE_PRESETS: Array<number> = [
+	8, 16, 24, 32, 48, 64, 128, 256, 512,
+];
 
-/** Integer zoom levels keep every art pixel the same size on screen. */
+/** Power-of-two half zoom plus integer zoom levels keep pixels crisp on screen. */
 export const ZOOM_LEVELS: Array<number> = [
-	1, 2, 3, 4, 5, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 56, 64, 72, 80,
-	96,
+	0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 56, 64, 72,
+	80, 96,
 ];
 
 export const MAX_HISTORY = 100;

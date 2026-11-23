@@ -44,7 +44,7 @@ const LAYOUTS: Array<{
 const PREVIEW_BOX = 280;
 
 const numberClass =
-	"w-20 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 tabular-nums text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]";
+	"w-20 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 tabular-nums text-(--pe-text) outline-none focus:border-(--pe-accent)";
 
 const toInt = (value: string, min: number, max: number): number =>
 	Math.max(min, Math.min(max, Math.round(Number(value)) || min));
@@ -169,7 +169,7 @@ export const SpriteSheetDialog = ({
 			<div className="grid grid-cols-[1fr_auto] gap-5">
 				<div className="min-w-0 space-y-4">
 					<div>
-						<p className="mb-2 text-xs text-[var(--pe-text-muted)]">Layout</p>
+						<p className="mb-2 text-xs text-(--pe-text-muted)">Layout</p>
 						<div className="flex flex-wrap gap-1.5">
 							{LAYOUTS.map((entry) => (
 								<TextButton
@@ -220,7 +220,7 @@ export const SpriteSheetDialog = ({
 						)}
 					</div>
 					{tagsLayoutWithoutTags && (
-						<p className="text-xs text-[var(--pe-warn-ink)]">
+						<p className="text-xs text-(--pe-warn-ink)">
 							There are no tags yet (add them in the timeline), so all frames go
 							in a single row.
 						</p>
@@ -250,7 +250,7 @@ export const SpriteSheetDialog = ({
 					</div>
 
 					<div>
-						<p className="mb-2 text-xs text-[var(--pe-text-muted)]">
+						<p className="mb-2 text-xs text-(--pe-text-muted)">
 							Scale (nearest neighbour, stays crisp)
 						</p>
 						<div className="flex flex-wrap gap-1.5">
@@ -271,7 +271,7 @@ export const SpriteSheetDialog = ({
 					<label className="flex items-center gap-2">
 						File name
 						<input
-							className="flex-1 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
+							className="flex-1 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-(--pe-text) outline-none focus:border-(--pe-accent)"
 							value={fileName}
 							onChange={(event) => {
 								setFileName(event.target.value);
@@ -287,8 +287,8 @@ export const SpriteSheetDialog = ({
 					/>
 				</div>
 
-				<div className="w-[300px] space-y-2">
-					<div className="preview-checker flex items-center justify-center overflow-auto rounded-lg border border-[var(--pe-border)] p-1">
+				<div className="w-75 space-y-2">
+					<div className="preview-checker flex items-center justify-center overflow-auto rounded-lg border border-(--pe-border) p-1">
 						<canvas
 							ref={previewRef}
 							style={{
@@ -299,12 +299,12 @@ export const SpriteSheetDialog = ({
 							}}
 						/>
 					</div>
-					<p className="text-[11px] text-[var(--pe-text-muted)]">
+					<p className="text-[11px] text-(--pe-text-muted)">
 						{layout.columns} × {layout.rows} cells of {width}×{height} ·{" "}
 						{size.width}×{size.height}px
 					</p>
 					{options.layout === "tags" && layout.tagRows.length > 0 && (
-						<ol className="space-y-0.5 text-[11px] text-[var(--pe-text-muted)]">
+						<ol className="space-y-0.5 text-[11px] text-(--pe-text-muted)">
 							{layout.tagRows.map((entry) => (
 								<li key={entry.row}>
 									Row {entry.row + 1}: {entry.name}
@@ -313,13 +313,13 @@ export const SpriteSheetDialog = ({
 						</ol>
 					)}
 					{layout.skipped > 0 && (
-						<p className="text-[11px] text-[var(--pe-warn-ink)]">
+						<p className="text-[11px] text-(--pe-warn-ink)">
 							{layout.skipped} frame{layout.skipped === 1 ? "" : "s"} do not fit
 							in a {layout.columns}×{layout.rows} grid and will be left out.
 						</p>
 					)}
 					{problem && (
-						<p className="text-[11px] text-[var(--pe-danger)]">{problem}</p>
+						<p className="text-[11px] text-(--pe-danger)">{problem}</p>
 					)}
 				</div>
 			</div>

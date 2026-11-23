@@ -166,14 +166,39 @@ const ThemePreviewCard = ({
 				definition.swatches
 			: definition.swatches;
 
+	const isNes = definition.id === "nes";
+	const isGameBoy = definition.id === "gameboy";
+	const isWii = definition.id === "wii";
+	const frameRadiusClass = isNes
+		? "rounded-none"
+		: isGameBoy
+			? "rounded-xs"
+			: isWii
+				? "rounded-md"
+				: "rounded-xs";
+	const deskStyle = isWii
+		? {
+				backgroundColor: displaySwatches.desk,
+				backgroundImage:
+					"repeating-linear-gradient(to bottom, transparent 0, transparent 3px, rgb(160 185 210 / 25%) 3px, rgb(160 185 210 / 25%) 4px)",
+			}
+		: isGameBoy
+			? {
+					backgroundColor: displaySwatches.desk,
+					backgroundImage:
+						"linear-gradient(to right, rgb(15 46 15 / 10%) 1px, transparent 1px), linear-gradient(to bottom, rgb(15 46 15 / 10%) 1px, transparent 1px)",
+					backgroundSize: "4px 4px",
+				}
+			: { backgroundColor: displaySwatches.desk };
+
 	return (
 		<button
 			aria-pressed={selected}
 			type="button"
-			className={`group flex flex-col overflow-hidden rounded-xl border text-left transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--pe-accent)] ${
+			className={`group flex flex-col overflow-hidden rounded-xl border text-left transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--pe-accent) ${
 				selected
-					? "border-[var(--pe-accent)] bg-[var(--pe-accent-soft)] ring-1 ring-[var(--pe-accent-ring)]"
-					: "border-[var(--pe-border)] bg-[var(--pe-bg-panel-subtle)] hover:border-[var(--pe-border-strong)] hover:bg-[var(--pe-bg-control)]"
+					? "border-(--pe-accent) bg-(--pe-accent-soft) ring-1 ring-(--pe-accent-ring)"
+					: "border-(--pe-border) bg-(--pe-bg-panel-subtle) hover:border-(--pe-border-strong) hover:bg-(--pe-bg-control)"
 			}`}
 			onClick={() => {
 				onSelect(definition.id);
@@ -182,38 +207,46 @@ const ThemePreviewCard = ({
 			{/* Mini studio wireframe preview */}
 			<div
 				className="swatch-preserve relative flex h-16 w-full flex-col overflow-hidden border-b border-black/10 p-1.5"
-				style={{ backgroundColor: displaySwatches.desk }}
+				style={deskStyle}
 			>
 				<div
-					className="flex h-2.5 items-center justify-between rounded-xs px-1"
 					style={{ backgroundColor: displaySwatches.chrome }}
+					className={`flex h-2.5 items-center justify-between px-1 ${frameRadiusClass} ${
+						isNes
+							? "border-b-2 border-[#d92320]"
+							: isWii
+								? "border-b border-[#4cc0f5]"
+								: ""
+					}`}
 				>
 					<div className="flex items-center gap-0.5">
 						<span
-							className="h-1.5 w-1.5 rounded-xs"
+							className={`h-1.5 w-1.5 ${frameRadiusClass}`}
 							style={{ backgroundColor: displaySwatches.accent }}
 						/>
 						<span
-							className="h-1 w-5 rounded-xs opacity-60"
+							className={`h-1 w-5 opacity-60 ${frameRadiusClass}`}
 							style={{ backgroundColor: displaySwatches.text }}
 						/>
 					</div>
 					<span
-						className="h-1.5 w-3 rounded-xs"
+						className={`h-1.5 w-3 ${frameRadiusClass}`}
 						style={{ backgroundColor: displaySwatches.elevated }}
 					/>
 				</div>
 				<div className="mt-1 flex flex-1 gap-1">
 					<div
-						className="flex w-2.5 flex-col items-center gap-0.5 rounded-xs py-0.5"
 						style={{ backgroundColor: displaySwatches.panel }}
+						className={`flex w-2.5 flex-col items-center gap-0.5 py-0.5 ${frameRadiusClass} ${
+							isWii ? "border border-[#b8d3e8]" : ""
+						}`}
 					>
 						<span
-							className="h-1.5 w-1.5 rounded-xs"
+							className={`h-1.5 w-1.5 ${frameRadiusClass}`}
 							style={{ backgroundColor: displaySwatches.accent }}
 						/>
 						<span
-							className="h-1.5 w-1.5 rounded-xs opacity-45"
+							className={`h-1.5 w-1.5 opacity-45 ${frameRadiusClass}`}
 							style={{ backgroundColor: displaySwatches.text }}
 						/>
 					</div>
@@ -246,15 +279,17 @@ const ThemePreviewCard = ({
 						</div>
 					</div>
 					<div
-						className="flex w-7 flex-col gap-0.5 rounded-xs p-0.5"
 						style={{ backgroundColor: displaySwatches.panel }}
+						className={`flex w-7 flex-col gap-0.5 p-0.5 ${frameRadiusClass} ${
+							isWii ? "border border-[#b8d3e8]" : ""
+						}`}
 					>
 						<span
-							className="h-2 w-full rounded-xs"
+							className={`h-2 w-full ${frameRadiusClass}`}
 							style={{ backgroundColor: displaySwatches.elevated }}
 						/>
 						<span
-							className="h-1 w-4 rounded-xs opacity-50"
+							className={`h-1 w-4 opacity-50 ${frameRadiusClass}`}
 							style={{ backgroundColor: displaySwatches.text }}
 						/>
 					</div>
@@ -265,12 +300,7 @@ const ThemePreviewCard = ({
 						className="swatch-preserve absolute right-1.5 bottom-1.5 flex h-4 w-4 items-center justify-center rounded-full shadow"
 						style={{
 							backgroundColor: displaySwatches.accent,
-							color:
-								definition.id === "espresso"
-									? "#1a120d"
-									: definition.id === "midnight"
-										? "#1b0a14"
-										: "#ffffff",
+							color: displaySwatches.accentInk,
 						}}
 					>
 						<CheckIcon className="h-3 w-3" />
@@ -280,14 +310,14 @@ const ThemePreviewCard = ({
 
 			<div className="flex flex-1 flex-col justify-between p-2.5">
 				<div className="flex items-center justify-between gap-2">
-					<span className="text-xs font-semibold text-[var(--pe-text)]">
+					<span className="text-xs font-semibold text-(--pe-text)">
 						{definition.id === "system" ? systemSubtitle : definition.name}
 					</span>
-					<span className="rounded-full bg-[var(--pe-bg-control)] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-[var(--pe-text-muted)]">
+					<span className="rounded-full bg-(--pe-bg-control) px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-(--pe-text-muted)">
 						{definition.scheme}
 					</span>
 				</div>
-				<p className="mt-1 text-[11px] leading-snug text-[var(--pe-text-muted)]">
+				<p className="mt-1 text-[11px] leading-snug text-(--pe-text-muted)">
 					{definition.subtitle}
 				</p>
 			</div>
@@ -306,14 +336,17 @@ const AppearanceTab = (): FunctionComponent => {
 	const studioThemes = THEME_DEFINITIONS.filter(
 		(definition) => definition.group === "studio"
 	);
+	const consoleThemes = THEME_DEFINITIONS.filter(
+		(definition) => definition.group === "console"
+	);
 
 	return (
 		<div className="space-y-5">
 			<div>
-				<h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--pe-text-muted)]">
+				<h3 className="text-xs font-semibold uppercase tracking-wider text-(--pe-text-muted)">
 					Standard Themes
 				</h3>
-				<p className="mt-0.5 text-xs text-[var(--pe-text-muted)]">
+				<p className="mt-0.5 text-xs text-(--pe-text-muted)">
 					Switch between system-synced, crisp paper light, or neutral dark.
 				</p>
 				<div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
@@ -330,14 +363,34 @@ const AppearanceTab = (): FunctionComponent => {
 			</div>
 
 			<div>
-				<h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--pe-text-muted)]">
+				<h3 className="text-xs font-semibold uppercase tracking-wider text-(--pe-text-muted)">
 					Studio Palettes
 				</h3>
-				<p className="mt-0.5 text-xs text-[var(--pe-text-muted)]">
+				<p className="mt-0.5 text-xs text-(--pe-text-muted)">
 					Crafted color atmospheres designed to give your workspace character.
 				</p>
-				<div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+				<div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
 					{studioThemes.map((definition) => (
+						<ThemePreviewCard
+							key={definition.id}
+							definition={definition}
+							selected={theme === definition.id}
+							systemDark={systemDark}
+							onSelect={setTheme}
+						/>
+					))}
+				</div>
+			</div>
+
+			<div>
+				<h3 className="text-xs font-semibold uppercase tracking-wider text-(--pe-text-muted)">
+					Console Themes
+				</h3>
+				<p className="mt-0.5 text-xs text-(--pe-text-muted)">
+					Classic hardware-inspired chrome, pixel bezels, and menu aesthetics.
+				</p>
+				<div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+					{consoleThemes.map((definition) => (
 						<ThemePreviewCard
 							key={definition.id}
 							definition={definition}
@@ -371,7 +424,7 @@ const PanelsTab = (): FunctionComponent => {
 	return (
 		<div className="space-y-4">
 			<div>
-				<h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--pe-text-muted)]">
+				<h3 className="text-xs font-semibold uppercase tracking-wider text-(--pe-text-muted)">
 					Quick Layouts
 				</h3>
 				<div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -381,17 +434,17 @@ const PanelsTab = (): FunctionComponent => {
 							aria-pressed={activePreset === preset.id}
 							title={preset.hint}
 							type="button"
-							className={`flex flex-col rounded-xl border px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--pe-accent)] ${
+							className={`flex flex-col rounded-xl border px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent) ${
 								activePreset === preset.id
-									? "border-[var(--pe-accent)] bg-[var(--pe-accent-soft)] text-[var(--pe-text)]"
-									: "border-[var(--pe-border)] bg-[var(--pe-bg-panel-subtle)] text-[var(--pe-text-secondary)] hover:bg-[var(--pe-bg-control)]"
+									? "border-(--pe-accent) bg-(--pe-accent-soft) text-(--pe-text)"
+									: "border-(--pe-border) bg-(--pe-bg-panel-subtle) text-(--pe-text-secondary) hover:bg-(--pe-bg-control)"
 							}`}
 							onClick={() => {
 								applyWorkspacePreset(preset.id);
 							}}
 						>
 							<span className="text-xs font-semibold">{preset.label}</span>
-							<span className="mt-0.5 text-[10px] leading-tight text-[var(--pe-text-muted)]">
+							<span className="mt-0.5 text-[10px] leading-tight text-(--pe-text-muted)">
 								{preset.hint}
 							</span>
 						</button>
@@ -399,7 +452,7 @@ const PanelsTab = (): FunctionComponent => {
 				</div>
 			</div>
 
-			<div className="divide-y divide-[var(--pe-border-subtle)] rounded-xl border border-[var(--pe-border)] bg-[var(--pe-bg-panel-subtle)]">
+			<div className="divide-y divide-(--pe-border-subtle) rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle)">
 				{PANEL_ITEMS.map((item) => (
 					<div key={item.id} className="px-3.5 py-2.5">
 						<Switch
@@ -414,7 +467,7 @@ const PanelsTab = (): FunctionComponent => {
 				))}
 			</div>
 
-			<p className="rounded-lg border border-[var(--pe-border-subtle)] bg-[var(--pe-bg-panel-subtle)] px-3 py-2 text-[11px] text-[var(--pe-text-muted)]">
+			<p className="rounded-lg border border-(--pe-border-subtle) bg-(--pe-bg-panel-subtle) px-3 py-2 text-[11px] text-(--pe-text-muted)">
 				Tip: When <strong>Frames &amp; Timeline</strong> is hidden while{" "}
 				<strong>Layers</strong> stays enabled, Layers automatically docks into
 				the right sidebar so you keep full layer control with maximum vertical
@@ -460,7 +513,7 @@ const ToolbarTab = (): FunctionComponent => {
 
 	return (
 		<div className="space-y-4">
-			<div className="rounded-xl border border-[var(--pe-border)] bg-[var(--pe-bg-panel-subtle)] px-3.5 py-3">
+			<div className="rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle) px-3.5 py-3">
 				<Switch
 					checked={showToolbar}
 					description="Display the vertical tool strip alongside the canvas"
@@ -469,13 +522,13 @@ const ToolbarTab = (): FunctionComponent => {
 				/>
 			</div>
 
-			<div className="space-y-2 rounded-xl border border-[var(--pe-border)] bg-[var(--pe-bg-panel-subtle)] p-3">
+			<div className="space-y-2 rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle) p-3">
 				<div className="flex flex-wrap items-center justify-between gap-2">
 					<div>
-						<span className="text-xs font-semibold text-[var(--pe-text)]">
+						<span className="text-xs font-semibold text-(--pe-text)">
 							Sort Order
 						</span>
-						<span className="ml-2 text-[11px] text-[var(--pe-text-muted)]">
+						<span className="ml-2 text-[11px] text-(--pe-text-muted)">
 							{toolSortMode === "manual"
 								? "Manual drag or arrows"
 								: "Automatic sorting"}
@@ -496,7 +549,7 @@ const ToolbarTab = (): FunctionComponent => {
 					</div>
 				</div>
 
-				<div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--pe-border-subtle)] pt-2">
+				<div className="flex flex-wrap items-center justify-between gap-2 border-t border-(--pe-border-subtle) pt-2">
 					<div className="flex items-center gap-1.5">
 						<TextButton onClick={enableAllTools}>
 							Show all ({TOOLS.length})
@@ -504,7 +557,7 @@ const ToolbarTab = (): FunctionComponent => {
 						<TextButton onClick={enableEssentialTools}>
 							Essentials (9)
 						</TextButton>
-						<span className="ml-1 text-[11px] text-[var(--pe-text-muted)]">
+						<span className="ml-1 text-[11px] text-(--pe-text-muted)">
 							{enabledCount} of {TOOLS.length} enabled
 						</span>
 					</div>
@@ -519,7 +572,7 @@ const ToolbarTab = (): FunctionComponent => {
 				</div>
 			</div>
 
-			<div className="divide-y divide-[var(--pe-border-subtle)] rounded-xl border border-[var(--pe-border)] bg-[var(--pe-bg-panel-subtle)]">
+			<div className="divide-y divide-(--pe-border-subtle) rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle)">
 				{orderedTools.map((info, index) => {
 					const isEnabled = enabledTools[info.id] !== false;
 					const isLastEnabled = isEnabled && enabledCount <= 1;
@@ -534,7 +587,7 @@ const ToolbarTab = (): FunctionComponent => {
 								isEnabled ? "" : "opacity-60"
 							} ${
 								isDropTarget
-									? "border-t-2 border-t-[var(--pe-accent)] bg-[var(--pe-accent-soft)]"
+									? "border-t-2 border-t-(--pe-accent) bg-(--pe-accent-soft)"
 									: ""
 							}`}
 							onDragEnd={() => {
@@ -565,7 +618,7 @@ const ToolbarTab = (): FunctionComponent => {
 						>
 							<span
 								aria-hidden="true"
-								className="cursor-grab text-[var(--pe-text-muted)] active:cursor-grabbing"
+								className="cursor-grab text-(--pe-text-muted) active:cursor-grabbing"
 								title="Drag to reorder (switches to Manual sort)"
 							>
 								<Bars3Icon className="h-4 w-4" />
@@ -574,7 +627,7 @@ const ToolbarTab = (): FunctionComponent => {
 							<div className="flex items-center gap-0.5">
 								<button
 									aria-label={`Move ${info.label} up`}
-									className="flex h-6 w-6 items-center justify-center rounded text-[var(--pe-text-muted)] hover:bg-[var(--pe-bg-control-hover)] hover:text-[var(--pe-text)] disabled:cursor-not-allowed disabled:opacity-30"
+									className="flex h-6 w-6 items-center justify-center rounded text-(--pe-text-muted) hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text) disabled:cursor-not-allowed disabled:opacity-30"
 									disabled={index === 0}
 									title="Move up (switches to Manual)"
 									type="button"
@@ -586,7 +639,7 @@ const ToolbarTab = (): FunctionComponent => {
 								</button>
 								<button
 									aria-label={`Move ${info.label} down`}
-									className="flex h-6 w-6 items-center justify-center rounded text-[var(--pe-text-muted)] hover:bg-[var(--pe-bg-control-hover)] hover:text-[var(--pe-text)] disabled:cursor-not-allowed disabled:opacity-30"
+									className="flex h-6 w-6 items-center justify-center rounded text-(--pe-text-muted) hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text) disabled:cursor-not-allowed disabled:opacity-30"
 									disabled={index === orderedTools.length - 1}
 									title="Move down (switches to Manual)"
 									type="button"
@@ -598,23 +651,23 @@ const ToolbarTab = (): FunctionComponent => {
 								</button>
 							</div>
 
-							<span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-panel)] text-[var(--pe-text)]">
+							<span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-(--pe-border) bg-(--pe-bg-panel) text-(--pe-text)">
 								<ToolIcon className="h-4 w-4" tool={info.id} />
 							</span>
 
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-2">
-									<span className="truncate text-xs font-medium text-[var(--pe-text)]">
+									<span className="truncate text-xs font-medium text-(--pe-text)">
 										{info.label}
 									</span>
-									<span className="hidden rounded bg-[var(--pe-bg-control)] px-1.5 py-px text-[10px] text-[var(--pe-text-muted)] sm:inline">
+									<span className="hidden rounded bg-(--pe-bg-control) px-1.5 py-px text-[10px] text-(--pe-text-muted) sm:inline">
 										{TOOL_CATEGORY_LABELS[info.category]}
 									</span>
 								</div>
 							</div>
 
 							{toolSortMode === "most-used" && (
-								<span className="shrink-0 rounded-full bg-[var(--pe-bg-control)] px-2 py-0.5 text-[10px] tabular-nums text-[var(--pe-text-muted)]">
+								<span className="shrink-0 rounded-full bg-(--pe-bg-control) px-2 py-0.5 text-[10px] tabular-nums text-(--pe-text-muted)">
 									{usageCount} {usageCount === 1 ? "use" : "uses"}
 								</span>
 							)}
@@ -673,7 +726,7 @@ const EditorTab = (): FunctionComponent => {
 
 	return (
 		<div className="space-y-4">
-			<div className="divide-y divide-[var(--pe-border-subtle)] rounded-xl border border-[var(--pe-border)] bg-[var(--pe-bg-panel-subtle)]">
+			<div className="divide-y divide-(--pe-border-subtle) rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle)">
 				<div className="px-3.5 py-3">
 					<Switch
 						checked={showGrid}
@@ -692,12 +745,12 @@ const EditorTab = (): FunctionComponent => {
 				</div>
 			</div>
 
-			<div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--pe-border)] bg-[var(--pe-bg-panel-subtle)] px-3.5 py-3">
+			<div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle) px-3.5 py-3">
 				<div>
-					<p className="text-xs font-medium text-[var(--pe-text)]">
+					<p className="text-xs font-medium text-(--pe-text)">
 						Toolbar Width
 					</p>
-					<p className="mt-0.5 text-[11px] text-[var(--pe-text-muted)]">
+					<p className="mt-0.5 text-[11px] text-(--pe-text-muted)">
 						Currently {toolbarWidth}px wide (drag toolbar edge or reset)
 					</p>
 				</div>
@@ -711,12 +764,12 @@ const EditorTab = (): FunctionComponent => {
 				</TextButton>
 			</div>
 
-			<div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--pe-border)] bg-[var(--pe-bg-panel-subtle)] px-3.5 py-3">
+			<div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle) px-3.5 py-3">
 				<div>
-					<p className="text-xs font-medium text-[var(--pe-text)]">
+					<p className="text-xs font-medium text-(--pe-text)">
 						Reset Workspace Preferences
 					</p>
-					<p className="mt-0.5 text-[11px] text-[var(--pe-text-muted)]">
+					<p className="mt-0.5 text-[11px] text-(--pe-text-muted)">
 						Restore default theme, panel visibility, and tool ordering
 					</p>
 				</div>
@@ -816,7 +869,7 @@ export const SettingsDialog = ({
 			title="Studio Settings"
 			footer={
 				<div className="flex w-full items-center justify-between gap-3">
-					<span className="text-[11px] text-[var(--pe-text-muted)]">
+					<span className="text-[11px] text-(--pe-text-muted)">
 						Changes are saved automatically
 					</span>
 					<TextButton variant="primary" onClick={onClose}>

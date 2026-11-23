@@ -21,24 +21,24 @@ const SlotButton = ({
 	<button
 		aria-pressed={active}
 		type="button"
-		className={`flex flex-1 items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--pe-accent)] ${
+		className={`flex flex-1 items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent) ${
 			active
-				? "border-[var(--pe-accent)] bg-[var(--pe-accent-soft)]"
-				: "border-[var(--pe-border)] bg-[var(--pe-bg-control)] hover:bg-[var(--pe-bg-control-hover)]"
+				? "border-(--pe-accent) bg-(--pe-accent-soft)"
+				: "border-(--pe-border) bg-(--pe-bg-control) hover:bg-(--pe-bg-control-hover)"
 		}`}
 		onClick={() => {
 			onSelect(slot);
 		}}
 	>
 		<span
-			className="swatch-preserve h-5 w-5 shrink-0 rounded border border-[var(--pe-border-strong)]"
+			className="swatch-preserve h-5 w-5 shrink-0 rounded border border-(--pe-border-strong)"
 			style={{ background: color }}
 		/>
 		<span className="min-w-0">
-			<span className="block text-[9px] font-semibold uppercase tracking-wide text-[var(--pe-text-muted)]">
+			<span className="block text-[9px] font-semibold uppercase tracking-wide text-(--pe-text-muted)">
 				{slot === "primary" ? "Left" : "Right"}
 			</span>
-			<span className="block truncate font-mono text-[11px] text-[var(--pe-text)]">
+			<span className="block truncate font-mono text-[11px] text-(--pe-text)">
 				{color}
 			</span>
 		</span>
@@ -76,7 +76,7 @@ export const ColorPickerPanel = (): FunctionComponent => {
 			actions={
 				<div className="flex gap-1">
 					<button
-						className="rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--pe-text-secondary)] hover:bg-[var(--pe-bg-control-hover)] hover:text-[var(--pe-text)]"
+						className="rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-1.5 py-0.5 text-[10px] font-medium text-(--pe-text-secondary) hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text)"
 						title="Step primary color one hue-shifted shade darker"
 						type="button"
 						onClick={() => {
@@ -86,7 +86,7 @@ export const ColorPickerPanel = (): FunctionComponent => {
 						− Shade
 					</button>
 					<button
-						className="rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--pe-text-secondary)] hover:bg-[var(--pe-bg-control-hover)] hover:text-[var(--pe-text)]"
+						className="rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-1.5 py-0.5 text-[10px] font-medium text-(--pe-text-secondary) hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text)"
 						title="Step primary color one hue-shifted shade lighter"
 						type="button"
 						onClick={() => {
@@ -107,7 +107,7 @@ export const ColorPickerPanel = (): FunctionComponent => {
 				/>
 				<button
 					aria-label="Swap primary and secondary colors (X)"
-					className="rounded-md px-1 py-1 text-xs text-[var(--pe-text-muted)] hover:bg-[var(--pe-bg-control)] hover:text-[var(--pe-text)]"
+					className="rounded-md px-1 py-1 text-xs text-(--pe-text-muted) hover:bg-(--pe-bg-control) hover:text-(--pe-text)"
 					title="Swap (X)"
 					type="button"
 					onClick={swapColors}
@@ -130,12 +130,12 @@ export const ColorPickerPanel = (): FunctionComponent => {
 				<HexColorInput
 					prefixed
 					aria-label="Hex color"
-					className="w-full rounded-lg border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 font-mono text-xs text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
+					className="w-full rounded-lg border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 font-mono text-xs text-(--pe-text) outline-none focus:border-(--pe-accent)"
 					color={color}
 					onChange={setColor}
 				/>
 				<button
-					className="shrink-0 rounded-lg border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 text-xs font-medium text-[var(--pe-text)] transition-colors hover:bg-[var(--pe-bg-control-hover)]"
+					className="shrink-0 rounded-lg border border-(--pe-border) bg-(--pe-bg-control) px-2 text-xs font-medium text-(--pe-text) transition-colors hover:bg-(--pe-bg-control-hover)"
 					title="Add this color to the palette"
 					type="button"
 					onClick={() => {
@@ -147,11 +147,11 @@ export const ColorPickerPanel = (): FunctionComponent => {
 			</div>
 
 			{/* Hue-shifted color ramp */}
-			<div className="mt-2.5 rounded-lg border border-[var(--pe-border-subtle)] bg-[var(--pe-bg-panel-subtle)] p-2">
+			<div className="mt-2.5 rounded-lg border border-(--pe-border-subtle) bg-(--pe-bg-panel-subtle) p-2">
 				<div className="flex items-center justify-between gap-1">
 					<button
 						aria-expanded={rampOpen}
-						className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--pe-text-muted)] hover:text-[var(--pe-text)]"
+						className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-(--pe-text-muted) hover:text-(--pe-text)"
 						type="button"
 						onClick={() => {
 							setRampOpen((open) => !open);
@@ -162,7 +162,7 @@ export const ColorPickerPanel = (): FunctionComponent => {
 					<div className="flex items-center gap-2 text-[10px]">
 						<button
 							aria-pressed={rampOptionsOpen}
-							className="font-medium text-[var(--pe-text-muted)] hover:text-[var(--pe-text)]"
+							className="font-medium text-(--pe-text-muted) hover:text-(--pe-text)"
 							title="Configure hue shift parameters"
 							type="button"
 							onClick={() => {
@@ -172,7 +172,7 @@ export const ColorPickerPanel = (): FunctionComponent => {
 							Tune
 						</button>
 						<button
-							className="font-semibold text-[var(--pe-accent)] hover:underline"
+							className="font-semibold text-(--pe-accent) hover:underline"
 							title="Append generated ramp shades to palette"
 							type="button"
 							onClick={() => {
@@ -200,10 +200,10 @@ export const ColorPickerPanel = (): FunctionComponent => {
 										type="button"
 										className={`swatch-preserve relative h-5 flex-1 rounded-sm border transition-transform hover:scale-105 ${
 											swatch === primaryColor
-												? "border-white ring-2 ring-[var(--pe-accent)]"
+												? "border-white ring-2 ring-(--pe-accent)"
 												: isCenter
-													? "border-[var(--pe-text)]"
-													: "border-[var(--pe-border)]"
+													? "border-(--pe-text)"
+													: "border-(--pe-border)"
 										}`}
 										onClick={() => {
 											setPrimaryColor(swatch);
@@ -222,7 +222,7 @@ export const ColorPickerPanel = (): FunctionComponent => {
 						</div>
 
 						{rampOptionsOpen && (
-							<div className="mt-2 space-y-1.5 border-t border-[var(--pe-border-subtle)] pt-2 text-[11px] text-[var(--pe-text-muted)]">
+							<div className="mt-2 space-y-1.5 border-t border-(--pe-border-subtle) pt-2 text-[11px] text-(--pe-text-muted)">
 								<div className="flex items-center justify-between gap-2">
 									<span>Mode</span>
 									<div className="flex gap-1">
@@ -233,8 +233,8 @@ export const ColorPickerPanel = (): FunctionComponent => {
 												type="button"
 												className={`rounded px-1.5 py-0.5 text-[10px] capitalize ${
 													colorRampOptions.mode === mode
-														? "bg-[var(--pe-accent)] text-[var(--pe-accent-ink)]"
-														: "bg-[var(--pe-bg-control)] text-[var(--pe-text-secondary)] hover:bg-[var(--pe-bg-control-hover)]"
+														? "bg-(--pe-accent) text-(--pe-accent-ink)"
+														: "bg-(--pe-bg-control) text-(--pe-text-secondary) hover:bg-(--pe-bg-control-hover)"
 												}`}
 												onClick={() => {
 													setColorRampOptions({ mode });
@@ -249,7 +249,7 @@ export const ColorPickerPanel = (): FunctionComponent => {
 								<label className="flex items-center justify-between gap-2">
 									<span>Steps ({colorRampOptions.steps})</span>
 									<input
-										className="w-24 accent-[var(--pe-accent)]"
+										className="w-24 accent-(--pe-accent)"
 										max={9}
 										min={3}
 										step={2}
@@ -268,7 +268,7 @@ export const ColorPickerPanel = (): FunctionComponent => {
 										Shadow shift ({colorRampOptions.shadowHueShift}°)
 									</span>
 									<input
-										className="w-24 accent-[var(--pe-accent)]"
+										className="w-24 accent-(--pe-accent)"
 										max={90}
 										min={-90}
 										step={5}
@@ -287,7 +287,7 @@ export const ColorPickerPanel = (): FunctionComponent => {
 										Light shift ({colorRampOptions.highlightHueShift}°)
 									</span>
 									<input
-										className="w-24 accent-[var(--pe-accent)]"
+										className="w-24 accent-(--pe-accent)"
 										max={90}
 										min={-90}
 										step={5}
@@ -304,7 +304,7 @@ export const ColorPickerPanel = (): FunctionComponent => {
 								<label className="flex items-center justify-between gap-2">
 									<span>Saturation ({colorRampOptions.saturationBoost}%)</span>
 									<input
-										className="w-24 accent-[var(--pe-accent)]"
+										className="w-24 accent-(--pe-accent)"
 										max={40}
 										min={-20}
 										step={5}

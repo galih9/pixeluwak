@@ -68,16 +68,16 @@ const Slider = ({
 	hint?: string;
 	onChange: (value: number) => void;
 }): FunctionComponent => (
-	<label className="block text-xs text-[var(--pe-text-muted)]" title={hint}>
+	<label className="block text-xs text-(--pe-text-muted)" title={hint}>
 		<span className="flex justify-between">
 			{label}
-			<span className="tabular-nums text-[var(--pe-text)]">
+			<span className="tabular-nums text-(--pe-text)">
 				{value}
 				{suffix}
 			</span>
 		</span>
 		<input
-			className="mt-1 w-full accent-[var(--pe-accent)]"
+			className="mt-1 w-full accent-(--pe-accent)"
 			max={max}
 			min={min}
 			type="range"
@@ -90,7 +90,7 @@ const Slider = ({
 );
 
 const Heading = ({ children }: { children: string }): FunctionComponent => (
-	<p className="mt-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--pe-text-muted)] first:mt-0">
+	<p className="mt-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-(--pe-text-muted) first:mt-0">
 		{children}
 	</p>
 );
@@ -199,7 +199,7 @@ export const OutlineDialog = ({
 							update({ thickness });
 						}}
 					/>
-					<p className="mt-2 mb-1 text-xs text-[var(--pe-text-muted)]">Corners</p>
+					<p className="mt-2 mb-1 text-xs text-(--pe-text-muted)">Corners</p>
 					<Segmented<OutlineCorners>
 						value={options.corners}
 						options={[
@@ -224,7 +224,7 @@ export const OutlineDialog = ({
 							update({ corners });
 						}}
 					/>
-					<p className="mt-2 mb-1 text-xs text-[var(--pe-text-muted)]">Placement</p>
+					<p className="mt-2 mb-1 text-xs text-(--pe-text-muted)">Placement</p>
 					<Segmented<"outside" | "inside">
 						value={options.placement}
 						options={[
@@ -268,7 +268,7 @@ export const OutlineDialog = ({
 						<div className="mt-2 flex flex-wrap items-center gap-1">
 							<input
 								aria-label="Outline color"
-								className="h-6 w-8 cursor-pointer rounded border border-[var(--pe-border)] bg-transparent"
+								className="h-6 w-8 cursor-pointer rounded border border-(--pe-border) bg-transparent"
 								type="color"
 								value={options.colorHex}
 								onChange={(event) => {
@@ -283,8 +283,8 @@ export const OutlineDialog = ({
 									type="button"
 									className={`swatch-preserve h-4 w-4 rounded-sm border ${
 										swatch === options.colorHex
-											? "border-white ring-2 ring-[var(--pe-accent)]"
-											: "border-[var(--pe-border)]"
+											? "border-white ring-2 ring-(--pe-accent)"
+											: "border-(--pe-border)"
 									}`}
 									onClick={() => {
 										update({ colorHex: swatch });
@@ -343,7 +343,7 @@ export const OutlineDialog = ({
 
 				<div className="flex min-w-0 flex-1 flex-col">
 					<Heading>Preview</Heading>
-					<div className="preview-checker flex flex-1 items-center justify-center rounded-lg border border-[var(--pe-border)] p-2">
+					<div className="preview-checker flex flex-1 items-center justify-center rounded-lg border border-(--pe-border) p-2">
 						<canvas
 							ref={canvasRef}
 							style={{
@@ -353,7 +353,7 @@ export const OutlineDialog = ({
 							}}
 						/>
 					</div>
-					<p className="mt-1.5 text-[11px] text-[var(--pe-text-muted)]">
+					<p className="mt-1.5 text-[11px] text-(--pe-text-muted)">
 						{outlineCount === 0
 							? `Nothing to outline on “${layerName}”`
 							: `${outlineCount} outline pixels on “${layerName}”${

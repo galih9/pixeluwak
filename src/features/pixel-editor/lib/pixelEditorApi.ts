@@ -48,7 +48,9 @@ import type {
 	PixelBuffer,
 	PixelEditorApi,
 	PixelInfo,
+	ResampleAlgorithm,
 	ResizeAnchor,
+	ResizeCanvasOptions,
 	SpriteSheetOptions,
 	Tool,
 } from "../types";
@@ -587,9 +589,19 @@ export function newCanvas(width: number, height: number): void {
 export function resizeCanvas(
 	width: number,
 	height: number,
-	anchor: ResizeAnchor = "center"
+	options: ResizeAnchor | ResizeCanvasOptions = "center"
 ): void {
-	useEditorStore.getState().resizeCanvas(width, height, anchor);
+	useEditorStore.getState().resizeCanvas(width, height, options);
+}
+
+export function scaleCanvas(
+	width: number,
+	height: number,
+	algorithm: ResampleAlgorithm = "nearest"
+): void {
+	useEditorStore
+		.getState()
+		.resizeCanvas(width, height, { mode: "scale", algorithm });
 }
 
 export function undo(): void {
@@ -988,6 +1000,7 @@ export const pixelEditorApi: PixelEditorApi<EditorState> = {
 
 	newCanvas,
 	resizeCanvas,
+	scaleCanvas,
 	undo,
 	redo,
 	canUndo,

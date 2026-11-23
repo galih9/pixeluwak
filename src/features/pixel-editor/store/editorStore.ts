@@ -66,6 +66,8 @@ import {
 	maskIsEmpty,
 	placeClip,
 	replaceColorInBuffer,
+	resamplePixels,
+	resizeAnchorOffset,
 	resizePixels,
 	shiftMask,
 } from "../lib/raster";
@@ -88,7 +90,10 @@ import type {
 	Point,
 	ReferenceImageData,
 	ReplaceScope,
+	ResampleAlgorithm,
 	ResizeAnchor,
+	ResizeCanvasOptions,
+	ResizeMode,
 	RulerGridSettings,
 	SelectionMask,
 	SelectionMode,
@@ -185,7 +190,11 @@ type Actions = {
 	// document
 	commitPixels: (pixels: PixelBuffer, selection?: SelectionMask | null) => void;
 	newCanvas: (width: number, height: number) => void;
-	resizeCanvas: (width: number, height: number, anchor: ResizeAnchor) => void;
+	resizeCanvas: (
+		width: number,
+		height: number,
+		options?: ResizeAnchor | ResizeCanvasOptions
+	) => void;
 	loadDocument: (
 		document: Partial<DocumentData> &
 			Pick<DocumentData, "width" | "height"> & { pixels?: PixelBuffer }
@@ -718,32 +727,134 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 		get().fitView();
 	},
 
-	resizeCanvas: (width, height, anchor): void => {
+	resizeCanvas: (width, height, options): void => {
 		get().anchorFloating();
-		const w = clampSize(width);
-		const h = clampSize(height);
-		set((state) => ({
-			...withHistory(state),
-			width: w,
-			height: h,
+		const targetWidth = clampSize(width);
+		const targetHeight = clampSize(height);
+		const mode: ResizeMode =
+			typeof options === "string" ? "crop" : (options?.mode ?? "crop");
+		const anchor: ResizeAnchor =
+			typeof options === "string" ? options : (options?.anchor ?? "center");
+		const algorithm: ResampleAlgorithm =
+			typeof options === "string"
+				? "nearest"
+				: (options?.algorithm ?? "nearest");
+		const current = get();
+		if (current.width === targetWidth && current.height === targetHeight) {
+			return;
+		}
+		set((state) => {
+			if (state.width === targetWidth && state.height === targetHeight) {
+				return state;
+			}
+			const bufferCache = new Map<PixelBuffer, PixelBuffer>();
+			const transformBuffer = (pixels: PixelBuffer): PixelBuffer => {
+				const cached = bufferCache.get(pixels);
+				if (cached) return cached;
+				const next =
+					mode === "scale"
+						? resamplePixels(
+								pixels,
+								state.width,
+								state.height,
+								targetWidth,
+								targetHeight,
+								algorithm
+							)
+						: resizePixels(
+								pixels,
+								state.width,
+								state.height,
+								targetWidth,
+								targetHeight,
+								anchor
+							);
+				bufferCache.set(pixels, next);
+				return next;
+			};
+
 			// Every frame gets resized, not only the one on screen.
-			...framesPatch(
-				state.layers,
-				syncedFrames(state).map((frame) => ({
-					...frame,
-					cels: mapCels(frame.cels, (pixels) =>
-						resizePixels(pixels, state.width, state.height, w, h, anchor)
-					),
-				})),
-				state.currentFrame,
-				state.activeLayer,
-				w,
-				h
-			),
-			selection: null,
-			textDraft: null,
-		}));
+			const nextFrames = syncedFrames(state).map((frame) => ({
+				...frame,
+				cels: mapCels(frame.cels, transformBuffer),
+			}));
+
+			const { offsetX, offsetY } = resizeAnchorOffset(
+				state.width,
+				state.height,
+				targetWidth,
+				targetHeight,
+				anchor
+			);
+			const scaleX = targetWidth / state.width;
+			const scaleY = targetHeight / state.height;
+			const nextLayers = state.layers.map((layer) => {
+				if (layer.kind !== "reference" || !layer.reference) return layer;
+				const { reference } = layer;
+				return {
+					...layer,
+					reference:
+						mode === "scale"
+							? {
+									...reference,
+									x: reference.x * scaleX,
+									y: reference.y * scaleY,
+									width: reference.width * scaleX,
+									height: reference.height * scaleY,
+								}
+							: {
+									...reference,
+									x: reference.x + offsetX,
+									y: reference.y + offsetY,
+								},
+				};
+			});
+
+			const clampAxis = (value: number, limit: number): number =>
+				Math.max(0, Math.min(limit, value));
+			const symmetryXPos =
+				state.symmetryXPos === null
+					? null
+					: clampAxis(
+							mode === "scale"
+								? state.symmetryXPos * scaleX
+								: state.symmetryXPos + offsetX,
+							targetWidth
+						);
+			const symmetryYPos =
+				state.symmetryYPos === null
+					? null
+					: clampAxis(
+							mode === "scale"
+								? state.symmetryYPos * scaleY
+								: state.symmetryYPos + offsetY,
+							targetHeight
+						);
+
+			return {
+				...withHistory(state),
+				width: targetWidth,
+				height: targetHeight,
+				...framesPatch(
+					nextLayers,
+					nextFrames,
+					state.currentFrame,
+					state.activeLayer,
+					targetWidth,
+					targetHeight
+				),
+				symmetryXPos,
+				symmetryYPos,
+				selection: null,
+				textDraft: null,
+			};
+		});
 		get().fitView();
+		get().showNotice(
+			`Resized canvas to ${targetWidth}×${targetHeight} (${
+				mode === "scale" ? algorithm : `crop · ${anchor}`
+			})`
+		);
 	},
 
 	loadDocument: (document): void => {

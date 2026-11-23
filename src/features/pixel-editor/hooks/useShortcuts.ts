@@ -173,6 +173,10 @@ export function useShortcuts(): void {
 				state.openDialog("outline");
 				return;
 			}
+			if (event.shiftKey && key === "r") {
+				state.openDialog("resize");
+				return;
+			}
 			if (event.shiftKey && key === "t") {
 				state.openDialog("tilemap");
 				return;

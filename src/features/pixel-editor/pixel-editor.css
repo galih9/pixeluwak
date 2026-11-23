@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Pixelatte Studio Theme Tokens & Modern Web Primitives
+   Pixeluwak Studio Theme Tokens & Modern Web Primitives
    ========================================================================== */
 
 :root {
@@ -192,6 +192,11 @@ html {
 	color: var(--pe-text);
 }
 
+::selection {
+	background-color: var(--pe-accent);
+	color: var(--pe-accent-ink);
+}
+
 /* Explicit theme presets */
 :root[data-theme="light"] {
 	color-scheme: light;
@@ -333,37 +338,103 @@ html {
 	--pe-shadow-modal: 0 22px 50px rgb(31 45 33 / 20%), 0 2px 8px rgb(31 45 33 / 8%);
 }
 
+:root[data-theme="nes"] {
+	color-scheme: dark;
+	--pe-bg-desk: #141518;
+	--pe-bg-desk-dot: #292c36;
+	--pe-bg-chrome: #1c1e24;
+	--pe-bg-panel: #24262e;
+	--pe-bg-panel-subtle: #1e2027;
+	--pe-bg-control: #32353f;
+	--pe-bg-control-hover: #3f4350;
+	--pe-bg-active-row: #3a2226;
+	--pe-border: #4a4e5c;
+	--pe-border-subtle: #343742;
+	--pe-border-strong: #7d8294;
+	--pe-text: #f2f3f5;
+	--pe-text-secondary: #c8ccd6;
+	--pe-text-muted: #a2a7b4;
+	--pe-accent: #d92320;
+	--pe-accent-hover: #ee3531;
+	--pe-accent-ink: #ffffff;
+	--pe-accent-soft: rgb(217 35 32 / 22%);
+	--pe-accent-soft-ink: #ff9a98;
+	--pe-accent-ring: rgb(229 37 33 / 68%);
+	--pe-warn-soft: rgb(250 185 20 / 20%);
+	--pe-warn-ink: #ffd452;
+	--pe-danger: #ff6b6b;
+	--pe-danger-soft: rgb(255 107 107 / 20%);
+	--pe-scrollbar-thumb: #808596;
+	--pe-scrollbar-track: #1a1c22;
+	--pe-backdrop: rgb(10 10 14 / 76%);
+	--pe-shadow-sm: 2px 2px 0 rgb(0 0 0 / 70%);
+	--pe-shadow-modal: 6px 6px 0 rgb(0 0 0 / 75%), 0 0 0 2px #7d8294;
+}
+
 :root[data-theme="gameboy"] {
 	color-scheme: light;
-	--pe-bg-desk: #c4cba8;
-	--pe-bg-desk-dot: #abb48d;
-	--pe-bg-chrome: #cfd5b6;
-	--pe-bg-panel: #e7ebd6;
-	--pe-bg-panel-subtle: #dce1c7;
-	--pe-bg-control: #d5dcc0;
-	--pe-bg-control-hover: #c6cfad;
-	--pe-bg-active-row: #cbd6b2;
-	--pe-border: #aeb891;
-	--pe-border-subtle: #c5ceb0;
-	--pe-border-strong: #879468;
-	--pe-text: #1b2c12;
-	--pe-text-secondary: #374d2a;
-	--pe-text-muted: #5a6f4b;
-	--pe-accent: #2f5220;
-	--pe-accent-hover: #213c15;
-	--pe-accent-ink: #edf2da;
-	--pe-accent-soft: rgb(47 82 32 / 15%);
-	--pe-accent-soft-ink: #1e3b12;
-	--pe-accent-ring: rgb(47 82 32 / 52%);
-	--pe-warn-soft: rgb(138 100 16 / 16%);
-	--pe-warn-ink: #644606;
-	--pe-danger: #993333;
-	--pe-danger-soft: rgb(153 51 51 / 14%);
-	--pe-scrollbar-thumb: #6f7c58;
-	--pe-scrollbar-track: #d4dac0;
-	--pe-backdrop: rgb(20 32 14 / 42%);
-	--pe-shadow-sm: 0 1px 2px rgb(27 44 18 / 10%);
-	--pe-shadow-modal: 0 22px 50px rgb(27 44 18 / 24%), 0 2px 8px rgb(27 44 18 / 10%);
+	--pe-bg-desk: #8fa65a;
+	--pe-bg-desk-dot: #7c9348;
+	--pe-bg-chrome: #a7b974;
+	--pe-bg-panel: #c6d594;
+	--pe-bg-panel-subtle: #b5c682;
+	--pe-bg-control: #a8bb73;
+	--pe-bg-control-hover: #99ad62;
+	--pe-bg-active-row: #9cb363;
+	--pe-border: #4d692c;
+	--pe-border-subtle: #758f48;
+	--pe-border-strong: #25451a;
+	--pe-text: #0f2e0f;
+	--pe-text-secondary: #1c4218;
+	--pe-text-muted: #26481b;
+	--pe-accent: #1a471a;
+	--pe-accent-hover: #0f330f;
+	--pe-accent-ink: #d7e5a8;
+	--pe-accent-soft: rgb(15 56 15 / 16%);
+	--pe-accent-soft-ink: #0f380f;
+	--pe-accent-ring: rgb(15 56 15 / 55%);
+	--pe-warn-soft: rgb(98 74 10 / 18%);
+	--pe-warn-ink: #4a3704;
+	--pe-danger: #8c1b47;
+	--pe-danger-soft: rgb(140 27 71 / 16%);
+	--pe-scrollbar-thumb: #305422;
+	--pe-scrollbar-track: #b2c47d;
+	--pe-backdrop: rgb(15 46 15 / 50%);
+	--pe-shadow-sm: 2px 2px 0 rgb(15 46 15 / 45%);
+	--pe-shadow-modal: 4px 4px 0 #0f2e0f, 0 0 0 2px #0f2e0f;
+}
+
+:root[data-theme="wii"] {
+	color-scheme: light;
+	--pe-bg-desk: #edf1f6;
+	--pe-bg-desk-dot: #dfe6ee;
+	--pe-bg-chrome: #e6ecf2;
+	--pe-bg-panel: #ffffff;
+	--pe-bg-panel-subtle: #f4f8fc;
+	--pe-bg-control: #edf3f9;
+	--pe-bg-control-hover: #dff0fb;
+	--pe-bg-active-row: #dcf0fc;
+	--pe-border: #c5d4e3;
+	--pe-border-subtle: #dce6f0;
+	--pe-border-strong: #5cbef0;
+	--pe-text: #2b3642;
+	--pe-text-secondary: #475869;
+	--pe-text-muted: #526375;
+	--pe-accent: #0078bc;
+	--pe-accent-hover: #0065a0;
+	--pe-accent-ink: #ffffff;
+	--pe-accent-soft: rgb(43 179 243 / 16%);
+	--pe-accent-soft-ink: #00639c;
+	--pe-accent-ring: rgb(43 179 243 / 60%);
+	--pe-warn-soft: rgb(234 156 16 / 16%);
+	--pe-warn-ink: #8c5600;
+	--pe-danger: #c93748;
+	--pe-danger-soft: rgb(201 55 72 / 12%);
+	--pe-scrollbar-thumb: #638aa8;
+	--pe-scrollbar-track: #eaf0f6;
+	--pe-backdrop: rgb(210 226 240 / 62%);
+	--pe-shadow-sm: 0 2px 6px rgb(0 120 188 / 16%), inset 0 1px 0 rgb(255 255 255 / 90%);
+	--pe-shadow-modal: 0 18px 46px rgb(30 70 110 / 22%), 0 0 0 2px #4cc0f5;
 }
 
 :root[data-theme="midnight"] {
@@ -797,4 +868,152 @@ dialog.editor-modal::backdrop {
 	font-size: 0.65rem;
 	font-weight: 600;
 	line-height: 1.1;
+}
+
+/* ==========================================================================
+   Console Theme Structural Character (NES Classic, Game Boy, Wii Home)
+   ========================================================================== */
+
+:root[data-theme="nes"] .pe-panel-card,
+:root[data-theme="nes"] .pe-btn,
+:root[data-theme="nes"] .pe-tool-btn,
+:root[data-theme="nes"] dialog.editor-modal,
+:root[data-theme="nes"] .editor-popover,
+:root[data-theme="nes"] .editor-side-popover,
+:root[data-theme="nes"] .pe-kbd {
+	border-radius: 2px;
+}
+
+:root[data-theme="nes"] .pe-panel-card {
+	border-width: 2px;
+	box-shadow: 3px 3px 0 rgb(0 0 0 / 55%);
+}
+
+:root[data-theme="nes"] dialog.editor-modal,
+:root[data-theme="nes"] .editor-popover,
+:root[data-theme="nes"] .editor-side-popover {
+	border-width: 2px;
+}
+
+:root[data-theme="nes"] .pe-topbar {
+	border-bottom: 2px solid var(--pe-accent);
+}
+
+:root[data-theme="nes"] .pe-statusbar {
+	border-top: 2px solid var(--pe-border-strong);
+}
+
+:root[data-theme="nes"] .canvas-backdrop {
+	background-image: radial-gradient(var(--pe-bg-desk-dot) 1px, transparent 1px);
+	background-size: 12px 12px;
+}
+
+:root[data-theme="gameboy"] .canvas-backdrop {
+	background-color: var(--pe-bg-desk);
+	background-image:
+		linear-gradient(to right, rgb(15 46 15 / 8%) 1px, transparent 1px),
+		linear-gradient(to bottom, rgb(15 46 15 / 8%) 1px, transparent 1px);
+	background-size: 6px 6px;
+}
+
+:root[data-theme="gameboy"] .pe-panel-card,
+:root[data-theme="gameboy"] dialog.editor-modal,
+:root[data-theme="gameboy"] .editor-popover,
+:root[data-theme="gameboy"] .editor-side-popover,
+:root[data-theme="gameboy"] .pe-tool-btn,
+:root[data-theme="gameboy"] .pe-btn {
+	border-radius: 3px;
+	border-width: 2px;
+}
+
+:root[data-theme="gameboy"] .pe-panel-card {
+	box-shadow: 2px 2px 0 rgb(15 46 15 / 35%);
+}
+
+:root[data-theme="gameboy"] .pe-topbar {
+	border-bottom: 2px solid var(--pe-border-strong);
+	box-shadow: inset 0 -2px 0 rgb(140 27 71 / 65%);
+}
+
+:root[data-theme="gameboy"] .pe-statusbar {
+	border-top: 2px solid var(--pe-border-strong);
+}
+
+:root[data-theme="wii"] .canvas-backdrop {
+	background-color: var(--pe-bg-desk);
+	background-image: repeating-linear-gradient(
+		to bottom,
+		transparent 0,
+		transparent 3px,
+		rgb(185 202 220 / 30%) 3px,
+		rgb(185 202 220 / 30%) 4px
+	);
+	background-size: auto;
+}
+
+:root[data-theme="wii"] .pe-topbar {
+	background: linear-gradient(180deg, #fafcfe 0%, #e4ecf4 100%);
+	border-bottom: 2px solid #4cc0f5;
+}
+
+:root[data-theme="wii"] .pe-statusbar {
+	background: linear-gradient(180deg, #f3f7fb 0%, #e1e9f2 100%);
+	border-top: 2px solid #75ccf5;
+}
+
+:root[data-theme="wii"] .pe-panel-card,
+:root[data-theme="wii"] .editor-popover,
+:root[data-theme="wii"] .editor-side-popover {
+	border-radius: 1rem;
+	border-width: 1.5px;
+	border-color: #b8d3e8;
+	box-shadow:
+		inset 0 1px 0 rgb(255 255 255 / 95%),
+		0 4px 12px rgb(40 90 140 / 8%);
+}
+
+:root[data-theme="wii"] dialog.editor-modal {
+	border-radius: 1.25rem;
+	border-width: 2px;
+	border-color: #5cbef0;
+}
+
+:root[data-theme="wii"] .pe-btn {
+	border-radius: 9999px;
+	box-shadow: inset 0 1px 0 rgb(255 255 255 / 65%);
+}
+
+:root[data-theme="wii"] .pe-tool-btn {
+	border-radius: 0.75rem;
+}
+
+:root[data-theme="wii"] .pe-btn[aria-pressed="true"],
+:root[data-theme="wii"] .pe-tool-btn[aria-pressed="true"] {
+	background-image: linear-gradient(180deg, #219be0 0%, #0078bc 100%);
+	box-shadow:
+		0 0 0 2px rgb(76 192 245 / 35%),
+		inset 0 1px 0 rgb(255 255 255 / 45%);
+}
+
+@media (hover: hover) {
+	:root[data-theme="wii"] .pe-btn:hover:not(:disabled),
+	:root[data-theme="wii"] .pe-tool-btn:hover:not([aria-pressed="true"]):not(:disabled) {
+		box-shadow:
+			0 0 0 2px rgb(76 192 245 / 35%),
+			inset 0 1px 0 rgb(255 255 255 / 80%);
+	}
+}
+
+@media (forced-colors: active) {
+	:root[data-theme="nes"] .pe-panel-card,
+	:root[data-theme="gameboy"] .pe-panel-card,
+	:root[data-theme="gameboy"] .pe-topbar,
+	:root[data-theme="wii"] .pe-panel-card,
+	:root[data-theme="wii"] .pe-topbar,
+	:root[data-theme="wii"] .pe-statusbar,
+	:root[data-theme="wii"] .pe-btn,
+	:root[data-theme="wii"] .pe-tool-btn {
+		background-image: none;
+		box-shadow: none;
+	}
 }

@@ -161,8 +161,8 @@ const PopoverSection = ({
 	children: ReactNode;
 }): FunctionComponent => (
 	<div className="space-y-2.5">
-		<div className="flex items-center justify-between gap-2 border-b border-[var(--pe-border-subtle)] pb-1.5">
-			<span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pe-text-muted)]">
+		<div className="flex items-center justify-between gap-2 border-b border-(--pe-border-subtle) pb-1.5">
+			<span className="text-[11px] font-semibold uppercase tracking-wide text-(--pe-text-muted)">
 				{title}
 			</span>
 			{action}
@@ -374,10 +374,10 @@ export const Toolbar = (): FunctionComponent => {
 	};
 
 	const inputClass =
-		"w-full rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 text-xs tabular-nums text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]";
+		"w-full rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-xs tabular-nums text-(--pe-text) outline-none focus:border-(--pe-accent)";
 
 	return (
-		<aside className="flex shrink-0 bg-[var(--pe-bg-panel)]">
+		<aside className="flex shrink-0 bg-(--pe-bg-panel)">
 			<div
 				className="editor-scrollbar flex flex-1 flex-col overflow-x-hidden overflow-y-auto px-1.5 py-2.5"
 				style={{ width }}
@@ -414,7 +414,7 @@ export const Toolbar = (): FunctionComponent => {
 								{showGroupSeparator && (
 									<div
 										aria-orientation="horizontal"
-										className="col-span-full my-1 h-px border-t border-[var(--pe-border-subtle)]"
+										className="col-span-full my-1 h-px border-t border-(--pe-border-subtle)"
 										role="separator"
 									/>
 								)}
@@ -450,7 +450,7 @@ export const Toolbar = (): FunctionComponent => {
 											setFocusedItemId(itemId);
 										}}
 									>
-										<ToolIcon className="h-[18px] w-[18px]" tool={displayed.id} />
+										<ToolIcon className="h-4.5 w-4.5" tool={displayed.id} />
 									</button>
 									{hasChildren && (
 										<>
@@ -463,7 +463,7 @@ export const Toolbar = (): FunctionComponent => {
 												ref={(element) => {
 													flyoutRefs.current[slot.id] = element;
 												}}
-												className="editor-side-popover w-52 rounded-xl border border-[var(--pe-border-strong)] bg-[var(--pe-bg-panel)] p-1.5 text-xs text-[var(--pe-text)]"
+												className="editor-side-popover w-52 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-1.5 text-xs text-(--pe-text)"
 												id={flyoutId}
 												popover="auto"
 												style={popoverPositionStyle}
@@ -476,7 +476,7 @@ export const Toolbar = (): FunctionComponent => {
 													}
 												}}
 											>
-												<div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--pe-text-muted)]">
+												<div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-(--pe-text-muted)">
 													{slot.primary.label} tools
 												</div>
 												<div className="space-y-0.5">
@@ -487,10 +487,10 @@ export const Toolbar = (): FunctionComponent => {
 																key={member.id}
 																aria-pressed={memberActive}
 																type="button"
-																className={`flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--pe-accent)] ${
+																className={`flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent) ${
 																	memberActive
-																		? "bg-[var(--pe-accent-soft)] text-[var(--pe-accent-soft-ink)] font-semibold"
-																		: "text-[var(--pe-text)] hover:bg-[var(--pe-bg-control-hover)]"
+																		? "bg-(--pe-accent-soft) text-(--pe-accent-soft-ink) font-semibold"
+																		: "text-(--pe-text) hover:bg-(--pe-bg-control-hover)"
 																}`}
 																onClick={() => {
 																	selectToolFromGroup(slot.primary.id, member.id);
@@ -519,7 +519,7 @@ export const Toolbar = (): FunctionComponent => {
 
 					<div
 						aria-orientation="horizontal"
-						className="col-span-full my-1 h-px border-t border-[var(--pe-border-subtle)]"
+						className="col-span-full my-1 h-px border-t border-(--pe-border-subtle)"
 						role="separator"
 					/>
 
@@ -544,7 +544,7 @@ export const Toolbar = (): FunctionComponent => {
 								setFocusedItemId("guide:mirror-h");
 							}}
 						>
-							<GuideIcon className="h-[18px] w-[18px]" kind="mirror-h" />
+							<GuideIcon className="h-4.5 w-4.5" kind="mirror-h" />
 						</button>
 
 						<button
@@ -562,7 +562,7 @@ export const Toolbar = (): FunctionComponent => {
 								setFocusedItemId("guide:mirror-v");
 							}}
 						>
-							<GuideIcon className="h-[18px] w-[18px]" kind="mirror-v" />
+							<GuideIcon className="h-4.5 w-4.5" kind="mirror-v" />
 						</button>
 
 						{/* Ruler Grid Tool + Corner Settings Gear */}
@@ -584,7 +584,7 @@ export const Toolbar = (): FunctionComponent => {
 										setFocusedItemId("guide:grid");
 									}}
 								>
-									<GuideIcon className="h-[18px] w-[18px]" kind="ruler-grid" />
+									<GuideIcon className="h-4.5 w-4.5" kind="ruler-grid" />
 								</button>
 								<CornerGearButton
 									label="Grid Ruler settings"
@@ -592,7 +592,7 @@ export const Toolbar = (): FunctionComponent => {
 								/>
 								<div
 									ref={gridPopoverRef}
-									className="editor-side-popover w-64 rounded-xl border border-[var(--pe-border-strong)] bg-[var(--pe-bg-panel)] p-3 text-xs text-[var(--pe-text)]"
+									className="editor-side-popover w-64 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-3 text-xs text-(--pe-text)"
 									id={gridPopoverId}
 									popover="auto"
 									style={{ positionAnchor: "--guide-grid-anchor" }}
@@ -628,7 +628,7 @@ export const Toolbar = (): FunctionComponent => {
 											))}
 										</div>
 										<div className="grid grid-cols-2 gap-2">
-											<label className="text-[11px] text-[var(--pe-text-muted)]">
+											<label className="text-[11px] text-(--pe-text-muted)">
 												Cell W
 												<input
 													className={`mt-1 ${inputClass}`}
@@ -646,7 +646,7 @@ export const Toolbar = (): FunctionComponent => {
 													}}
 												/>
 											</label>
-											<label className="text-[11px] text-[var(--pe-text-muted)]">
+											<label className="text-[11px] text-(--pe-text-muted)">
 												Cell H
 												<input
 													className={`mt-1 ${inputClass}`}
@@ -664,7 +664,7 @@ export const Toolbar = (): FunctionComponent => {
 													}}
 												/>
 											</label>
-											<label className="text-[11px] text-[var(--pe-text-muted)]">
+											<label className="text-[11px] text-(--pe-text-muted)">
 												Offset X
 												<input
 													className={`mt-1 ${inputClass}`}
@@ -682,7 +682,7 @@ export const Toolbar = (): FunctionComponent => {
 													}}
 												/>
 											</label>
-											<label className="text-[11px] text-[var(--pe-text-muted)]">
+											<label className="text-[11px] text-(--pe-text-muted)">
 												Offset Y
 												<input
 													className={`mt-1 ${inputClass}`}
@@ -701,7 +701,7 @@ export const Toolbar = (): FunctionComponent => {
 												/>
 											</label>
 										</div>
-										<div className="space-y-1.5 border-t border-[var(--pe-border-subtle)] pt-2">
+										<div className="space-y-1.5 border-t border-(--pe-border-subtle) pt-2">
 											<Toggle
 												checked={rulerGrid.snapToGrid}
 												label="Snap to grid"
@@ -724,9 +724,9 @@ export const Toolbar = (): FunctionComponent => {
 												}}
 											/>
 										</div>
-										<div className="space-y-1.5 border-t border-[var(--pe-border-subtle)] pt-2">
+										<div className="space-y-1.5 border-t border-(--pe-border-subtle) pt-2">
 											<div className="flex items-center justify-between">
-												<span className="text-[11px] text-[var(--pe-text-muted)]">
+												<span className="text-[11px] text-(--pe-text-muted)">
 													Color
 												</span>
 												<div className="flex items-center gap-1">
@@ -739,8 +739,8 @@ export const Toolbar = (): FunctionComponent => {
 															type="button"
 															className={`swatch-preserve h-4 w-4 rounded-full border ${
 																rulerGrid.color === swatch
-																	? "ring-2 ring-[var(--pe-accent)] border-white"
-																	: "border-[var(--pe-border-strong)]"
+																	? "ring-2 ring-(--pe-accent) border-white"
+																	: "border-(--pe-border-strong)"
 															}`}
 															onClick={() => {
 																setRulerGrid({ color: swatch });
@@ -749,10 +749,10 @@ export const Toolbar = (): FunctionComponent => {
 													))}
 												</div>
 											</div>
-											<label className="flex items-center justify-between gap-2 text-[11px] text-[var(--pe-text-muted)]">
+											<label className="flex items-center justify-between gap-2 text-[11px] text-(--pe-text-muted)">
 												Opacity
 												<input
-													className="w-28 accent-[var(--pe-accent)]"
+													className="w-28 accent-(--pe-accent)"
 													max={100}
 													min={15}
 													type="range"
@@ -761,7 +761,7 @@ export const Toolbar = (): FunctionComponent => {
 														setRulerGrid({ opacity: Number(event.target.value) });
 													}}
 												/>
-												<span className="w-8 text-right tabular-nums text-[var(--pe-text)]">
+												<span className="w-8 text-right tabular-nums text-(--pe-text)">
 													{rulerGrid.opacity}%
 												</span>
 											</label>
@@ -789,7 +789,7 @@ export const Toolbar = (): FunctionComponent => {
 										setFocusedItemId("guide:perspective");
 									}}
 								>
-									<GuideIcon className="h-[18px] w-[18px]" kind="perspective" />
+									<GuideIcon className="h-4.5 w-4.5" kind="perspective" />
 								</button>
 								<CornerGearButton
 									label="Perspective Guide settings"
@@ -797,7 +797,7 @@ export const Toolbar = (): FunctionComponent => {
 								/>
 								<div
 									ref={perspectivePopoverRef}
-									className="editor-side-popover w-64 rounded-xl border border-[var(--pe-border-strong)] bg-[var(--pe-bg-panel)] p-3 text-xs text-[var(--pe-text)]"
+									className="editor-side-popover w-64 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-3 text-xs text-(--pe-text)"
 									id={perspectivePopoverId}
 									popover="auto"
 									style={{ positionAnchor: "--guide-perspective-anchor" }}
@@ -835,7 +835,7 @@ export const Toolbar = (): FunctionComponent => {
 											))}
 										</div>
 										{perspectiveGuide.mode !== "fisheye" ? (
-											<label className="flex items-center justify-between gap-2 text-[11px] text-[var(--pe-text-muted)]">
+											<label className="flex items-center justify-between gap-2 text-[11px] text-(--pe-text-muted)">
 												Horizon Y
 												<input
 													className={`${inputClass} w-20`}
@@ -854,10 +854,10 @@ export const Toolbar = (): FunctionComponent => {
 											</label>
 										) : (
 											<div className="space-y-1.5">
-												<label className="flex items-center justify-between gap-2 text-[11px] text-[var(--pe-text-muted)]">
+												<label className="flex items-center justify-between gap-2 text-[11px] text-(--pe-text-muted)">
 													Radius
 													<input
-														className="w-28 accent-[var(--pe-accent)]"
+														className="w-28 accent-(--pe-accent)"
 														max={Math.max(canvasWidth, canvasHeight)}
 														min={4}
 														type="range"
@@ -868,14 +868,14 @@ export const Toolbar = (): FunctionComponent => {
 															});
 														}}
 													/>
-													<span className="w-8 text-right tabular-nums text-[var(--pe-text)]">
+													<span className="w-8 text-right tabular-nums text-(--pe-text)">
 														{perspectiveGuide.fisheyeRadius}
 													</span>
 												</label>
-												<label className="flex items-center justify-between gap-2 text-[11px] text-[var(--pe-text-muted)]">
+												<label className="flex items-center justify-between gap-2 text-[11px] text-(--pe-text-muted)">
 													Curve
 													<input
-														className="w-28 accent-[var(--pe-accent)]"
+														className="w-28 accent-(--pe-accent)"
 														max={100}
 														min={10}
 														type="range"
@@ -886,7 +886,7 @@ export const Toolbar = (): FunctionComponent => {
 															});
 														}}
 													/>
-													<span className="w-8 text-right tabular-nums text-[var(--pe-text)]">
+													<span className="w-8 text-right tabular-nums text-(--pe-text)">
 														{perspectiveGuide.fisheyeCurvature}%
 													</span>
 												</label>
@@ -894,7 +894,7 @@ export const Toolbar = (): FunctionComponent => {
 										)}
 										{perspectiveGuide.mode === "3-point" && (
 											<div className="flex items-center justify-between gap-2">
-												<span className="text-[11px] text-[var(--pe-text-muted)]">
+												<span className="text-[11px] text-(--pe-text-muted)">
 													3rd point
 												</span>
 												<div className="flex gap-1">
@@ -925,10 +925,10 @@ export const Toolbar = (): FunctionComponent => {
 												</div>
 											</div>
 										)}
-										<label className="flex items-center justify-between gap-2 text-[11px] text-[var(--pe-text-muted)]">
+										<label className="flex items-center justify-between gap-2 text-[11px] text-(--pe-text-muted)">
 											Rays
 											<input
-												className="w-28 accent-[var(--pe-accent)]"
+												className="w-28 accent-(--pe-accent)"
 												max={24}
 												min={4}
 												step={2}
@@ -940,14 +940,14 @@ export const Toolbar = (): FunctionComponent => {
 													});
 												}}
 											/>
-											<span className="w-8 text-right tabular-nums text-[var(--pe-text)]">
+											<span className="w-8 text-right tabular-nums text-(--pe-text)">
 												{perspectiveGuide.lineCount}
 											</span>
 										</label>
-										<label className="flex items-center justify-between gap-2 text-[11px] text-[var(--pe-text-muted)]">
+										<label className="flex items-center justify-between gap-2 text-[11px] text-(--pe-text-muted)">
 											Opacity
 											<input
-												className="w-28 accent-[var(--pe-accent)]"
+												className="w-28 accent-(--pe-accent)"
 												max={100}
 												min={15}
 												type="range"
@@ -958,7 +958,7 @@ export const Toolbar = (): FunctionComponent => {
 													});
 												}}
 											/>
-											<span className="w-8 text-right tabular-nums text-[var(--pe-text)]">
+											<span className="w-8 text-right tabular-nums text-(--pe-text)">
 												{perspectiveGuide.opacity}%
 											</span>
 										</label>
@@ -971,7 +971,7 @@ export const Toolbar = (): FunctionComponent => {
 												});
 											}}
 										/>
-										<p className="text-[10px] leading-snug text-[var(--pe-text-muted)]">
+										<p className="text-[10px] leading-snug text-(--pe-text-muted)">
 											Drag the VP markers directly on the canvas to adjust.
 										</p>
 									</PopoverSection>
@@ -997,7 +997,7 @@ export const Toolbar = (): FunctionComponent => {
 										setFocusedItemId("guide:tiled");
 									}}
 								>
-									<GuideIcon className="h-[18px] w-[18px]" kind="tiled" />
+									<GuideIcon className="h-4.5 w-4.5" kind="tiled" />
 								</button>
 								<CornerGearButton
 									label="Tiled Preview settings"
@@ -1005,7 +1005,7 @@ export const Toolbar = (): FunctionComponent => {
 								/>
 								<div
 									ref={tiledPopoverRef}
-									className="editor-side-popover w-56 rounded-xl border border-[var(--pe-border-strong)] bg-[var(--pe-bg-panel)] p-3 text-xs text-[var(--pe-text)]"
+									className="editor-side-popover w-56 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-3 text-xs text-(--pe-text)"
 									id={tiledPopoverId}
 									popover="auto"
 									style={{ positionAnchor: "--guide-tiled-anchor" }}
@@ -1032,10 +1032,10 @@ export const Toolbar = (): FunctionComponent => {
 												</TextButton>
 											))}
 										</div>
-										<label className="flex items-center justify-between gap-2 text-[11px] text-[var(--pe-text-muted)]">
+										<label className="flex items-center justify-between gap-2 text-[11px] text-(--pe-text-muted)">
 											Opacity
 											<input
-												className="w-24 accent-[var(--pe-accent)]"
+												className="w-24 accent-(--pe-accent)"
 												max={100}
 												min={15}
 												type="range"
@@ -1046,7 +1046,7 @@ export const Toolbar = (): FunctionComponent => {
 													});
 												}}
 											/>
-											<span className="w-8 text-right tabular-nums text-[var(--pe-text)]">
+											<span className="w-8 text-right tabular-nums text-(--pe-text)">
 												{tiledPreview.opacity}%
 											</span>
 										</label>
@@ -1060,19 +1060,19 @@ export const Toolbar = (): FunctionComponent => {
 				<div className="mt-auto flex flex-col items-center gap-1.5 pt-3">
 					<div className="relative h-9 w-9">
 						<div
-							className="swatch-preserve absolute right-0 bottom-0 h-6 w-6 rounded-md border border-[var(--pe-border-strong)] shadow-xs"
+							className="swatch-preserve absolute right-0 bottom-0 h-6 w-6 rounded-md border border-(--pe-border-strong) shadow-xs"
 							style={{ background: secondaryColor }}
 							title="Secondary color (right click)"
 						/>
 						<div
-							className="swatch-preserve absolute top-0 left-0 h-6 w-6 rounded-md border-2 border-[var(--pe-bg-panel)] ring-1 ring-[var(--pe-border-strong)] shadow-sm"
+							className="swatch-preserve absolute top-0 left-0 h-6 w-6 rounded-md border-2 border-(--pe-bg-panel) ring-1 ring-(--pe-border-strong) shadow-sm"
 							style={{ background: primaryColor }}
 							title="Primary color (left click)"
 						/>
 					</div>
 					<button
 						aria-label="Swap primary and secondary colors (X)"
-						className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-[var(--pe-text-muted)] transition-colors hover:bg-[var(--pe-bg-control)] hover:text-[var(--pe-text)]"
+						className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-(--pe-text-muted) transition-colors hover:bg-(--pe-bg-control) hover:text-(--pe-text)"
 						title="Swap colors (X)"
 						type="button"
 						onClick={swapColors}
@@ -1091,8 +1091,8 @@ export const Toolbar = (): FunctionComponent => {
 				role="separator"
 				tabIndex={0}
 				title="Drag to resize toolbar (double-click to reset)"
-				className={`group relative w-1.5 shrink-0 cursor-col-resize touch-none select-none transition-colors hover:bg-[var(--pe-accent-soft)] focus-visible:bg-[var(--pe-accent-soft)] focus-visible:outline-none ${
-					isResizing ? "bg-[var(--pe-accent-soft)]" : ""
+				className={`group relative w-1.5 shrink-0 cursor-col-resize touch-none select-none transition-colors hover:bg-(--pe-accent-soft) focus-visible:bg-(--pe-accent-soft) focus-visible:outline-none ${
+					isResizing ? "bg-(--pe-accent-soft)" : ""
 				}`}
 				onKeyDown={handleResizeKeyDown}
 				onPointerDown={handleResizePointerDown}
@@ -1101,8 +1101,8 @@ export const Toolbar = (): FunctionComponent => {
 				}}
 			>
 				<div
-					className={`pointer-events-none absolute inset-y-0 left-0 w-px transition-colors group-hover:bg-[var(--pe-accent)] group-focus-visible:bg-[var(--pe-accent)] ${
-						isResizing ? "bg-[var(--pe-accent)]" : "bg-[var(--pe-border)]"
+					className={`pointer-events-none absolute inset-y-0 left-0 w-px transition-colors group-hover:bg-(--pe-accent) group-focus-visible:bg-(--pe-accent) ${
+						isResizing ? "bg-(--pe-accent)" : "bg-(--pe-border)"
 					}`}
 				/>
 			</div>

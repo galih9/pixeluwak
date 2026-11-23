@@ -167,7 +167,7 @@ export const CustomBrushDialog = ({
 			onClose={onClose}
 		>
 			<div className="mb-3 space-y-1.5">
-				<span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pe-text-muted)]">
+				<span className="text-[11px] font-semibold uppercase tracking-wide text-(--pe-text-muted)">
 					Presets
 				</span>
 				<div className="flex flex-wrap gap-1.5">
@@ -188,7 +188,7 @@ export const CustomBrushDialog = ({
 								{isUserPreset && (
 									<button
 										aria-label={`Delete ${preset.name ?? "preset"}`}
-										className="rounded px-1 text-[11px] text-[var(--pe-text-muted)] hover:bg-[var(--pe-danger-soft)] hover:text-[var(--pe-danger)]"
+										className="rounded px-1 text-[11px] text-(--pe-text-muted) hover:bg-(--pe-danger-soft) hover:text-(--pe-danger)"
 										title="Delete preset"
 										type="button"
 										onClick={() => {
@@ -239,8 +239,8 @@ export const CustomBrushDialog = ({
 			</div>
 
 			{multiColorMode && (
-				<div className="mb-3 flex flex-wrap items-center gap-1.5 rounded-lg border border-[var(--pe-border-subtle)] bg-[var(--pe-bg-panel-subtle)] p-2">
-					<span className="text-[11px] text-[var(--pe-text-muted)]">
+				<div className="mb-3 flex flex-wrap items-center gap-1.5 rounded-lg border border-(--pe-border-subtle) bg-(--pe-bg-panel-subtle) p-2">
+					<span className="text-[11px] text-(--pe-text-muted)">
 						Color:
 					</span>
 					{palette.slice(0, 16).map((swatch) => (
@@ -252,8 +252,8 @@ export const CustomBrushDialog = ({
 							type="button"
 							className={`swatch-preserve h-4 w-4 rounded-sm border ${
 								paintColor === swatch
-									? "ring-2 ring-[var(--pe-accent)] border-white"
-									: "border-[var(--pe-border-strong)]"
+									? "ring-2 ring-(--pe-accent) border-white"
+									: "border-(--pe-border-strong)"
 							}`}
 							onClick={() => {
 								setPaintColor(swatch);
@@ -262,7 +262,7 @@ export const CustomBrushDialog = ({
 					))}
 					<input
 						aria-label="Custom pattern color"
-						className="h-5 w-6 cursor-pointer rounded border border-[var(--pe-border)] bg-transparent p-0"
+						className="h-5 w-6 cursor-pointer rounded border border-(--pe-border) bg-transparent p-0"
 						type="color"
 						value={paintColor}
 						onChange={(event) => {
@@ -273,7 +273,7 @@ export const CustomBrushDialog = ({
 			)}
 
 			<div
-				className="mx-auto grid w-fit select-none gap-px rounded-md border border-[var(--pe-border)] bg-[var(--pe-border)] p-px"
+				className="mx-auto grid w-fit select-none gap-px rounded-md border border-(--pe-border) bg-(--pe-border) p-px"
 				style={{
 					gridTemplateColumns: `repeat(${draft.width}, minmax(0, 1fr))`,
 				}}
@@ -304,8 +304,8 @@ export const CustomBrushDialog = ({
 								active
 									? cellHex
 										? ""
-										: "bg-[var(--pe-accent)] hover:bg-[var(--pe-accent-hover)]"
-									: "bg-[var(--pe-bg-panel)] hover:bg-[var(--pe-bg-control)]"
+										: "bg-(--pe-accent) hover:bg-(--pe-accent-hover)"
+									: "bg-(--pe-bg-panel) hover:bg-(--pe-bg-control)"
 							}`}
 							onPointerDown={(event) => {
 								event.preventDefault();
@@ -409,10 +409,10 @@ export const CustomBrushDialog = ({
 				</TextButton>
 			</div>
 
-			<div className="mt-3 flex items-center gap-2 border-t border-[var(--pe-border-subtle)] pt-3">
+			<div className="mt-3 flex items-center gap-2 border-t border-(--pe-border-subtle) pt-3">
 				<input
 					aria-label="New preset name"
-					className="flex-1 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 text-xs text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
+					className="flex-1 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-xs text-(--pe-text) outline-none focus:border-(--pe-accent)"
 					placeholder="Save pattern as preset…"
 					value={presetName}
 					onChange={(event) => {

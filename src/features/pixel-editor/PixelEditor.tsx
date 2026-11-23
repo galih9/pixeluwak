@@ -73,7 +73,7 @@ export const PixelEditor = (): FunctionComponent => {
 		panels.tilemap;
 
 	return (
-		<div className="pixel-editor-root flex h-screen w-screen select-none flex-col overflow-hidden bg-[var(--pe-bg-desk)] text-[var(--pe-text)]">
+		<div className="pixel-editor-root flex h-screen w-screen select-none flex-col overflow-hidden bg-(--pe-bg-desk) text-(--pe-text)">
 			<TopBar />
 			{panels.toolOptions && <ToolOptions />}
 			<div className="flex min-h-0 flex-1">
@@ -82,7 +82,7 @@ export const PixelEditor = (): FunctionComponent => {
 					<PixelCanvas />
 				</main>
 				{hasRightSidebar && (
-					<aside className="editor-scrollbar w-[276px] shrink-0 space-y-2.5 overflow-y-auto border-l border-[var(--pe-border)] bg-[var(--pe-bg-chrome)] p-2.5">
+					<aside className="editor-scrollbar w-69 shrink-0 space-y-2.5 overflow-y-auto border-l border-(--pe-border) bg-(--pe-bg-chrome) p-2.5">
 						{panels.colorPicker && <ColorPickerPanel />}
 						{panels.palette && <PalettePanel />}
 						{showDockedLayers && <LayersPanel />}

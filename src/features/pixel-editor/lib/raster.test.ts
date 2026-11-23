@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Point } from "../types";
+import { rgbaToPacked, TRANSPARENT } from "./color";
 import {
 	brushOffsets,
 	captureBrushFromSelection,
@@ -13,6 +14,8 @@ import {
 	polygonMask,
 	rectMask,
 	replaceColorInBuffer,
+	resamplePixels,
+	resizePixels,
 	selectionEdges,
 	stampDither,
 	symmetricPoints,
@@ -209,5 +212,118 @@ describe("raster", () => {
 		});
 		expect(data[0]).toBe(9);
 		expect(data[3]).toBe(9);
+	});
+
+	it("resizes pixels using 9-point anchors", () => {
+		const data = createPixels(2, 2);
+		data[0] = 11;
+		data[3] = 22;
+
+		const bottomRight = resizePixels(data, 2, 2, 4, 4, "bottom-right");
+		expect(bottomRight[2 * 4 + 2]).toBe(11);
+		expect(bottomRight[3 * 4 + 3]).toBe(22);
+
+		const top = resizePixels(data, 2, 2, 4, 4, "top");
+		expect(top[1]).toBe(11);
+		expect(top[1 * 4 + 2]).toBe(22);
+
+		const bottom = resizePixels(data, 2, 2, 4, 4, "bottom");
+		expect(bottom[2 * 4 + 1]).toBe(11);
+		expect(bottom[3 * 4 + 2]).toBe(22);
+
+		const left = resizePixels(data, 2, 2, 4, 4, "left");
+		expect(left[1 * 4]).toBe(11);
+		expect(left[2 * 4 + 1]).toBe(22);
+
+		const right = resizePixels(data, 2, 2, 4, 4, "right");
+		expect(right[1 * 4 + 2]).toBe(11);
+		expect(right[2 * 4 + 3]).toBe(22);
+
+		const center = resizePixels(data, 2, 2, 4, 4, "center");
+		expect(center[1 * 4 + 1]).toBe(11);
+		expect(center[2 * 4 + 2]).toBe(22);
+	});
+
+	it("resamples 512x512 blocks down to 128x128 with nearest and majority", () => {
+		const source = createPixels(512, 512);
+		const red = rgbaToPacked(255, 0, 0, 255);
+		const blue = rgbaToPacked(0, 0, 255, 255);
+		const green = rgbaToPacked(0, 255, 0, 255);
+		const gold = rgbaToPacked(255, 200, 0, 255);
+
+		// Paint distinct 4x4 blocks that map 1:1 to pixels in 128x128.
+		for (let y = 0; y < 4; y++) {
+			for (let x = 0; x < 4; x++) {
+				source[y * 512 + x] = red;
+				source[y * 512 + (508 + x)] = blue;
+				source[(508 + y) * 512 + x] = green;
+				source[(508 + y) * 512 + (508 + x)] = gold;
+			}
+		}
+
+		const nearest = resamplePixels(source, 512, 512, 128, 128, "nearest");
+		expect(nearest).toHaveLength(128 * 128);
+		expect(nearest[0]).toBe(red);
+		expect(nearest[127]).toBe(blue);
+		expect(nearest[127 * 128]).toBe(green);
+		expect(nearest[127 * 128 + 127]).toBe(gold);
+
+		const majority = resamplePixels(source, 512, 512, 128, 128, "majority");
+		expect(majority[0]).toBe(red);
+		expect(majority[127]).toBe(blue);
+		expect(majority[127 * 128]).toBe(green);
+		expect(majority[127 * 128 + 127]).toBe(gold);
+	});
+
+	it("picks the dominant palette color per block in majority mode", () => {
+		const source = createPixels(4, 4);
+		const teal = rgbaToPacked(0, 180, 180, 255);
+		const black = rgbaToPacked(0, 0, 0, 255);
+		source.fill(teal);
+		// Inject 3 stray pixels inside the 4x4 block; teal (13) must win cleanly.
+		source[0] = black;
+		source[5] = black;
+		source[10] = black;
+
+		const downscaled = resamplePixels(source, 4, 4, 1, 1, "majority");
+		expect(downscaled[0]).toBe(teal);
+	});
+
+	it("uses premultiplied alpha in smooth mode without black fringe and handles upscaling and non-square sizes", () => {
+		const red = rgbaToPacked(255, 0, 0, 255);
+		const source = createPixels(2, 2);
+		source[0] = red;
+		source[1] = red;
+		source[2] = TRANSPARENT;
+		source[3] = TRANSPARENT;
+
+		const smooth = resamplePixels(source, 2, 2, 1, 1, "smooth");
+		const bytes = new Uint8Array(smooth.buffer);
+		expect(bytes[0]).toBe(255);
+		expect(bytes[1]).toBe(0);
+		expect(bytes[2]).toBe(0);
+		expect(bytes[3]).toBeGreaterThanOrEqual(127);
+		expect(bytes[3]).toBeLessThanOrEqual(128);
+
+		const opaque = createPixels(2, 2);
+		opaque[0] = rgbaToPacked(200, 100, 0, 255);
+		opaque[1] = rgbaToPacked(100, 200, 0, 255);
+		opaque[2] = rgbaToPacked(200, 100, 0, 255);
+		opaque[3] = rgbaToPacked(100, 200, 0, 255);
+		const average = resamplePixels(opaque, 2, 2, 1, 1, "smooth");
+		const averageBytes = new Uint8Array(average.buffer);
+		expect(averageBytes[0]).toBe(150);
+		expect(averageBytes[1]).toBe(150);
+		expect(averageBytes[2]).toBe(0);
+		expect(averageBytes[3]).toBe(255);
+
+		const upscaled = resamplePixels(source, 2, 2, 4, 4, "nearest");
+		expect(upscaled).toHaveLength(16);
+		expect(upscaled[0]).toBe(red);
+		expect(upscaled[3]).toBe(red);
+		expect(upscaled[12]).toBe(TRANSPARENT);
+
+		const nonSquare = resamplePixels(createPixels(16, 8), 16, 8, 6, 12, "smooth");
+		expect(nonSquare).toHaveLength(6 * 12);
 	});
 });

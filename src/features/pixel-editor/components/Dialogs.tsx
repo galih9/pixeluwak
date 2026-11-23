@@ -4,9 +4,9 @@ import { EXPORT_SCALES, MAX_CANVAS_SIZE, SIZE_PRESETS } from "../constants";
 import { sequenceDuration, sequenceFor } from "../lib/animation";
 import { exportGif, exportPng } from "../lib/files";
 import { useEditorStore } from "../store/editorStore";
-import type { ResizeAnchor } from "../types";
 import { CustomBrushDialog } from "./CustomBrushDialog";
 import { OutlineDialog } from "./OutlineDialog";
+import { ResizeCanvasDialog } from "./ResizeCanvasDialog";
 import { SettingsDialog } from "./SettingsDialog";
 import { SpriteSheetDialog } from "./SpriteSheetDialog";
 import { TilemapDialog } from "./TilemapPreview";
@@ -23,28 +23,26 @@ const NewCanvasDialog = ({
 	const currentWidth = useEditorStore((state) => state.width);
 	const currentHeight = useEditorStore((state) => state.height);
 	const newCanvas = useEditorStore((state) => state.newCanvas);
-	const resizeCanvas = useEditorStore((state) => state.resizeCanvas);
+	const openDialog = useEditorStore((state) => state.openDialog);
 	const [width, setWidth] = useState(String(currentWidth));
 	const [height, setHeight] = useState(String(currentHeight));
-	const [anchor, setAnchor] = useState<ResizeAnchor>("center");
 
 	const inputClass =
-		"w-20 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]";
+		"w-20 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-(--pe-text) outline-none focus:border-(--pe-accent)";
 
 	return (
 		<Modal
-			title="Canvas size"
+			title="New canvas"
 			footer={
 				<>
 					<TextButton onClick={onClose}>Cancel</TextButton>
 					<TextButton
-						title="Keep the drawing and change the canvas size"
+						title="Resize or scale the current canvas instead"
 						onClick={() => {
-							resizeCanvas(clampInput(width), clampInput(height), anchor);
-							onClose();
+							openDialog("resize");
 						}}
 					>
-						Resize current
+						Resize current…
 					</TextButton>
 					<TextButton
 						variant="primary"
@@ -59,7 +57,7 @@ const NewCanvasDialog = ({
 			}
 			onClose={onClose}
 		>
-			<p className="mb-2 text-xs text-[var(--pe-text-muted)]">Presets</p>
+			<p className="mb-2 text-xs text-(--pe-text-muted)">Presets</p>
 			<div className="mb-4 flex flex-wrap gap-1.5">
 				{SIZE_PRESETS.map((size) => (
 					<TextButton
@@ -74,10 +72,11 @@ const NewCanvasDialog = ({
 					</TextButton>
 				))}
 			</div>
-			<div className="mb-4 flex items-center gap-3">
+			<div className="flex items-center gap-3">
 				<label className="flex items-center gap-2">
 					W
 					<input
+						autoFocus
 						className={inputClass}
 						max={MAX_CANVAS_SIZE}
 						min={1}
@@ -88,7 +87,7 @@ const NewCanvasDialog = ({
 						}}
 					/>
 				</label>
-				<span className="text-[var(--pe-text-muted)]">×</span>
+				<span className="text-(--pe-text-muted)">×</span>
 				<label className="flex items-center gap-2">
 					H
 					<input
@@ -102,29 +101,18 @@ const NewCanvasDialog = ({
 						}}
 					/>
 				</label>
-				<span className="text-xs text-[var(--pe-text-muted)]">
+				<span className="text-xs text-(--pe-text-muted)">
 					max {MAX_CANVAS_SIZE}
 				</span>
 			</div>
-			<label className="flex items-center gap-2 text-xs text-[var(--pe-text-muted)]">
-				When resizing, keep the drawing at the
-				<select
-					className="rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-1 text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
-					value={anchor}
-					onChange={(event) => {
-						setAnchor(event.target.value as ResizeAnchor);
-					}}
-				>
-					<option value="center">center</option>
-					<option value="top-left">top-left</option>
-				</select>
-			</label>
 		</Modal>
 	);
 };
 
 /** Largest GIF side we offer; bigger animated GIFs get slow and huge. */
 const MAX_GIF_SIDE = 2048;
+/** Largest PNG side we offer in the dialog; avoids giant browser canvas allocations. */
+const MAX_PNG_SIDE = 4096;
 
 const ExportDialog = ({
 	onClose,
@@ -140,17 +128,19 @@ const ExportDialog = ({
 	const playTag = useEditorStore((state) => state.playTag);
 	const openDialog = useEditorStore((state) => state.openDialog);
 	const animated = frames.length > 1;
+	const largestSide = Math.max(width, height);
 	const [format, setFormat] = useState<"png" | "gif">(animated ? "gif" : "png");
 	const [tagId, setTagId] = useState<number | null>(playTag);
-	const [scale, setScale] = useState(width <= 32 ? 8 : 4);
+	const [scale, setScale] = useState(
+		largestSide <= 32 ? 8 : largestSide <= 128 ? 4 : largestSide <= 256 ? 2 : 1
+	);
 	const [fileName, setFileName] = useState(name);
 
 	const isGif = format === "gif";
-	const scales = isGif
-		? EXPORT_SCALES.filter(
-				(option) => Math.max(width, height) * option <= MAX_GIF_SIDE
-			)
-		: EXPORT_SCALES;
+	const maxExportSide = isGif ? MAX_GIF_SIDE : MAX_PNG_SIDE;
+	const scales = EXPORT_SCALES.filter(
+		(option) => largestSide * option <= maxExportSide
+	);
 	const activeScale = scales.includes(scale)
 		? scale
 		: (scales[scales.length - 1] ?? 1);
@@ -215,7 +205,7 @@ const ExportDialog = ({
 					<label className="flex items-center gap-2">
 						Frames
 						<select
-							className="flex-1 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
+							className="flex-1 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-(--pe-text) outline-none focus:border-(--pe-accent)"
 							value={tagId ?? ""}
 							onChange={(event) => {
 								setTagId(
@@ -232,7 +222,7 @@ const ExportDialog = ({
 							))}
 						</select>
 					</label>
-					<p className="mt-1.5 text-xs text-[var(--pe-text-muted)]">
+					<p className="mt-1.5 text-xs text-(--pe-text-muted)">
 						{sequence.length} frames · {seconds.toFixed(2)}s per loop · loops
 						forever. GIF has no partial transparency: pixels under 50% opacity
 						become transparent, the rest solid.
@@ -240,7 +230,7 @@ const ExportDialog = ({
 				</div>
 			) : (
 				animated && (
-					<p className="mb-4 text-xs text-[var(--pe-text-muted)]">
+					<p className="mb-4 text-xs text-(--pe-text-muted)">
 						Exports frame {currentFrame + 1} (the one on the canvas).
 					</p>
 				)
@@ -248,14 +238,14 @@ const ExportDialog = ({
 			<label className="mb-4 flex items-center gap-2">
 				File name
 				<input
-					className="flex-1 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
+					className="flex-1 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-(--pe-text) outline-none focus:border-(--pe-accent)"
 					value={fileName}
 					onChange={(event) => {
 						setFileName(event.target.value);
 					}}
 				/>
 			</label>
-			<p className="mb-2 text-xs text-[var(--pe-text-muted)]">
+			<p className="mb-2 text-xs text-(--pe-text-muted)">
 				Scale (nearest neighbour, stays crisp)
 			</p>
 			<div className="flex flex-wrap gap-1.5">
@@ -309,6 +299,7 @@ const SHORTCUTS: Array<[string, string]> = [
 	["#", "Toggle grid"],
 	["Ctrl+S / Ctrl+O / Ctrl+E", "Save / Open / Export"],
 	["Ctrl+Shift+E", "Export sprite sheet…"],
+	["Shift+R", "Resize / scale canvas…"],
 	["Shift+T", "Tilemap large preview"],
 ];
 
@@ -328,7 +319,7 @@ const HelpDialog = ({
 					<dt>
 						<Kbd>{keys}</Kbd>
 					</dt>
-					<dd className="text-[var(--pe-text-secondary)]">{action}</dd>
+					<dd className="text-(--pe-text-secondary)">{action}</dd>
 				</div>
 			))}
 		</dl>
@@ -342,6 +333,7 @@ export const Dialogs = (): FunctionComponent => {
 		openDialog(null);
 	};
 	if (dialog === "new") return <NewCanvasDialog onClose={close} />;
+	if (dialog === "resize") return <ResizeCanvasDialog onClose={close} />;
 	if (dialog === "export") return <ExportDialog onClose={close} />;
 	if (dialog === "help") return <HelpDialog onClose={close} />;
 	if (dialog === "outline") return <OutlineDialog onClose={close} />;

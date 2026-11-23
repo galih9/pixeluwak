@@ -54,6 +54,18 @@ describe("uiSettingsStore", () => {
 		expect(document.documentElement.dataset["theme"]).toBe("matcha");
 		expect(meta?.content).toBe("light");
 
+		store.setTheme("nes");
+		expect(document.documentElement.dataset["theme"]).toBe("nes");
+		expect(meta?.content).toBe("dark");
+
+		store.setTheme("gameboy");
+		expect(document.documentElement.dataset["theme"]).toBe("gameboy");
+		expect(meta?.content).toBe("light");
+
+		store.setTheme("wii");
+		expect(document.documentElement.dataset["theme"]).toBe("wii");
+		expect(meta?.content).toBe("light");
+
 		store.setTheme("system");
 		expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
 		expect(meta?.content).toBe("light dark");
@@ -173,13 +185,19 @@ describe("uiSettingsStore", () => {
 
 	it("persists to localStorage and handles corrupt JSON gracefully", () => {
 		const store = useUiSettingsStore.getState();
-		store.setTheme("gameboy");
+		store.setTheme("wii");
 		store.enableEssentialTools();
 
 		const reloaded = loadPersistedUiSettings();
-		expect(reloaded.theme).toBe("gameboy");
+		expect(reloaded.theme).toBe("wii");
 		expect(reloaded.enabledTools.pencil).toBe(true);
 		expect(reloaded.enabledTools.blur).toBe(false);
+
+		store.setTheme("nes");
+		expect(loadPersistedUiSettings().theme).toBe("nes");
+
+		store.setTheme("gameboy");
+		expect(loadPersistedUiSettings().theme).toBe("gameboy");
 
 		window.localStorage.setItem(UI_SETTINGS_STORAGE_KEY, "{not-valid-json");
 		const fallback = loadPersistedUiSettings();

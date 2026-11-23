@@ -248,6 +248,7 @@ export type Clip = {
 
 export type DialogKind =
 	| "new"
+	| "resize"
 	| "export"
 	| "help"
 	| "outline"
@@ -262,8 +263,10 @@ export type ThemeId =
 	| "dark"
 	| "espresso"
 	| "matcha"
+	| "midnight"
+	| "nes"
 	| "gameboy"
-	| "midnight";
+	| "wii";
 
 export type PanelId =
 	| "colorPicker"
@@ -332,7 +335,26 @@ export type TileMapPattern = "repeat" | "mirror" | "rotate";
 
 export type HexOrientation = "flat" | "pointy";
 
-export type ResizeAnchor = "center" | "top-left";
+export type ResizeAnchor =
+	| "top-left"
+	| "top"
+	| "top-right"
+	| "left"
+	| "center"
+	| "right"
+	| "bottom-left"
+	| "bottom"
+	| "bottom-right";
+
+export type ResizeMode = "scale" | "crop";
+
+export type ResampleAlgorithm = "nearest" | "majority" | "smooth";
+
+export type ResizeCanvasOptions = {
+	mode?: ResizeMode;
+	anchor?: ResizeAnchor;
+	algorithm?: ResampleAlgorithm;
+};
 
 export type Notice = { id: number; message: string };
 
@@ -514,7 +536,16 @@ export type PixelEditorApi<TState = unknown> = {
 
 	// Document & canvas controls
 	newCanvas: (width: number, height: number) => void;
-	resizeCanvas: (width: number, height: number, anchor?: ResizeAnchor) => void;
+	resizeCanvas: (
+		width: number,
+		height: number,
+		options?: ResizeAnchor | ResizeCanvasOptions
+	) => void;
+	scaleCanvas: (
+		width: number,
+		height: number,
+		algorithm?: ResampleAlgorithm
+	) => void;
 	undo: () => void;
 	redo: () => void;
 	canUndo: () => boolean;

@@ -1,6 +1,7 @@
 import {
 	ArrowDownTrayIcon,
 	ArrowsPointingInIcon,
+	ArrowsPointingOutIcon,
 	ArrowsRightLeftIcon,
 	ArrowsUpDownIcon,
 	ArrowUturnLeftIcon,
@@ -22,6 +23,7 @@ import { type CSSProperties, type ReactNode, useId, useRef } from "react";
 import type { FunctionComponent } from "../../../common/types";
 import { openFile, saveProject } from "../lib/files";
 import { useEditorStore } from "../store/editorStore";
+import { PixeluwakEmblem } from "./PixeluwakEmblem";
 import { Divider, IconButton, Kbd } from "./ui";
 
 const FILE_ANCHOR = { anchorName: "--topbar-file-anchor" } as CSSProperties;
@@ -61,26 +63,6 @@ function positionPopoverFallback(
 	popover.style.transform = "none";
 }
 
-const PixelatteEmblem = (): FunctionComponent => (
-	<svg
-		aria-hidden="true"
-		className="h-6 w-6 shrink-0 rounded-md shadow-xs"
-		shapeRendering="crispEdges"
-		viewBox="0 0 8 8"
-	>
-		<rect fill="#1f1b24" height="8" width="8" x="0" y="0" />
-		<rect fill="#f472b6" height="2" width="2" x="1" y="1" />
-		<rect fill="#fbbf24" height="2" width="2" x="3" y="1" />
-		<rect fill="#38bdf8" height="2" width="2" x="5" y="1" />
-		<rect fill="#c084fc" height="2" width="2" x="1" y="3" />
-		<rect fill="#fff1e8" height="2" width="2" x="3" y="3" />
-		<rect fill="#34d399" height="2" width="2" x="5" y="3" />
-		<rect fill="#fb7185" height="2" width="2" x="1" y="5" />
-		<rect fill="#60a5fa" height="2" width="2" x="3" y="5" />
-		<rect fill="#f59e0b" height="2" width="2" x="5" y="5" />
-	</svg>
-);
-
 const MenuItem = ({
 	icon,
 	label,
@@ -93,12 +75,12 @@ const MenuItem = ({
 	onClick: () => void;
 }): FunctionComponent => (
 	<button
-		className="flex w-full items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-left text-xs text-[var(--pe-text)] transition-colors hover:bg-[var(--pe-bg-control-hover)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--pe-accent)]"
+		className="flex w-full items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-left text-xs text-(--pe-text) transition-colors hover:bg-(--pe-bg-control-hover) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent)"
 		type="button"
 		onClick={onClick}
 	>
 		<span className="flex min-w-0 items-center gap-2">
-			<span className="text-[var(--pe-text-muted)]">{icon}</span>
+			<span className="text-(--pe-text-muted)">{icon}</span>
 			<span className="truncate font-medium">{label}</span>
 		</span>
 		{shortcut && <Kbd>{shortcut}</Kbd>}
@@ -135,19 +117,19 @@ export const TopBar = (): FunctionComponent => {
 	const svgClass = "h-4 w-4";
 
 	return (
-		<header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-[var(--pe-border)] bg-[var(--pe-bg-chrome)] px-3">
+		<header className="pe-topbar flex h-12 shrink-0 items-center justify-between gap-2 border-b border-(--pe-border) bg-(--pe-bg-chrome) px-3">
 			{/* Left Zone: Brand + Project Name + File & Canvas Menus */}
 			<div className="flex min-w-0 items-center gap-1.5">
 				<div className="flex items-center gap-2 pr-1">
-					<PixelatteEmblem />
-					<span className="hidden text-xs font-bold tracking-tight text-[var(--pe-text)] sm:inline">
-						Pixelatte
+					<PixeluwakEmblem />
+					<span className="hidden text-xs font-bold tracking-tight text-(--pe-text) sm:inline">
+						Pixeluwak
 					</span>
 				</div>
 
 				<input
 					aria-label="Project name"
-					className="w-28 rounded-lg border border-transparent bg-transparent px-2 py-1 text-xs font-medium text-[var(--pe-text)] outline-none transition-colors hover:border-[var(--pe-border)] hover:bg-[var(--pe-bg-control)] focus:border-[var(--pe-accent)] focus:bg-[var(--pe-bg-panel)] sm:w-36"
+					className="w-28 rounded-lg border border-transparent bg-transparent px-2 py-1 text-xs font-medium text-(--pe-text) outline-none transition-colors hover:border-(--pe-border) hover:bg-(--pe-bg-control) focus:border-(--pe-accent) focus:bg-(--pe-bg-panel) sm:w-36"
 					value={name}
 					onChange={(event) => {
 						setName(event.target.value);
@@ -158,7 +140,7 @@ export const TopBar = (): FunctionComponent => {
 
 				<button
 					ref={fileTriggerRef}
-					className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-[var(--pe-text-secondary)] transition-colors hover:bg-[var(--pe-bg-control-hover)] hover:text-[var(--pe-text)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--pe-accent)]"
+					className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-(--pe-text-secondary) transition-colors hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent)"
 					popoverTarget={filePopoverId}
 					style={FILE_ANCHOR}
 					type="button"
@@ -169,7 +151,7 @@ export const TopBar = (): FunctionComponent => {
 
 				<div
 					ref={filePopoverRef}
-					className="editor-popover w-60 rounded-xl border border-[var(--pe-border-strong)] bg-[var(--pe-bg-panel)] p-1.5 text-xs text-[var(--pe-text)]"
+					className="editor-popover w-60 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-1.5 text-xs text-(--pe-text)"
 					id={filePopoverId}
 					popover="auto"
 					style={FILE_POPOVER_POS}
@@ -184,10 +166,19 @@ export const TopBar = (): FunctionComponent => {
 				>
 					<MenuItem
 						icon={<DocumentPlusIcon className={svgClass} />}
-						label="New / Resize Canvas…"
+						label="New Canvas…"
 						onClick={() => {
 							filePopoverRef.current?.hidePopover();
 							openDialog("new");
+						}}
+					/>
+					<MenuItem
+						icon={<ArrowsPointingOutIcon className={svgClass} />}
+						label="Resize Canvas…"
+						shortcut="Shift+R"
+						onClick={() => {
+							filePopoverRef.current?.hidePopover();
+							openDialog("resize");
 						}}
 					/>
 					<MenuItem
@@ -208,7 +199,7 @@ export const TopBar = (): FunctionComponent => {
 							saveProject();
 						}}
 					/>
-					<div className="my-1 h-px bg-[var(--pe-border-subtle)]" />
+					<div className="my-1 h-px bg-(--pe-border-subtle)" />
 					<MenuItem
 						icon={<PhotoIcon className={svgClass} />}
 						label="Export PNG / GIF…"
@@ -231,7 +222,7 @@ export const TopBar = (): FunctionComponent => {
 
 				<button
 					ref={canvasTriggerRef}
-					className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-[var(--pe-text-secondary)] transition-colors hover:bg-[var(--pe-bg-control-hover)] hover:text-[var(--pe-text)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--pe-accent)]"
+					className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-(--pe-text-secondary) transition-colors hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent)"
 					popoverTarget={canvasPopoverId}
 					style={CANVAS_ANCHOR}
 					type="button"
@@ -242,7 +233,7 @@ export const TopBar = (): FunctionComponent => {
 
 				<div
 					ref={canvasPopoverRef}
-					className="editor-popover w-56 rounded-xl border border-[var(--pe-border-strong)] bg-[var(--pe-bg-panel)] p-1.5 text-xs text-[var(--pe-text)]"
+					className="editor-popover w-56 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-1.5 text-xs text-(--pe-text)"
 					id={canvasPopoverId}
 					popover="auto"
 					style={CANVAS_POPOVER_POS}
@@ -255,6 +246,16 @@ export const TopBar = (): FunctionComponent => {
 						}
 					}}
 				>
+					<MenuItem
+						icon={<ArrowsPointingOutIcon className={svgClass} />}
+						label="Resize Canvas…"
+						shortcut="Shift+R"
+						onClick={() => {
+							canvasPopoverRef.current?.hidePopover();
+							openDialog("resize");
+						}}
+					/>
+					<div className="my-1 h-px bg-(--pe-border-subtle)" />
 					<MenuItem
 						icon={<ArrowsRightLeftIcon className={svgClass} />}
 						label="Flip Horizontal"
@@ -271,7 +272,7 @@ export const TopBar = (): FunctionComponent => {
 							flip("vertical");
 						}}
 					/>
-					<div className="my-1 h-px bg-[var(--pe-border-subtle)]" />
+					<div className="my-1 h-px bg-(--pe-border-subtle)" />
 					<MenuItem
 						icon={<SparklesIcon className={svgClass} />}
 						label="Auto Outline…"
@@ -294,7 +295,7 @@ export const TopBar = (): FunctionComponent => {
 			</div>
 
 			{/* Center Zone: History + Grid Pill */}
-			<div className="flex items-center gap-1 rounded-xl border border-[var(--pe-border)] bg-[var(--pe-bg-panel-subtle)] p-0.5">
+			<div className="flex items-center gap-1 rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle) p-0.5">
 				<IconButton
 					className={iconClass}
 					disabled={!canUndo}
@@ -312,7 +313,7 @@ export const TopBar = (): FunctionComponent => {
 					<ArrowUturnRightIcon className={svgClass} />
 				</IconButton>
 
-				<div className="mx-0.5 h-4 w-px bg-[var(--pe-border)]" />
+				<div className="mx-0.5 h-4 w-px bg-(--pe-border)" />
 
 				<IconButton
 					active={showGrid}
@@ -326,7 +327,7 @@ export const TopBar = (): FunctionComponent => {
 
 			{/* Right Zone: Zoom Pill + Help + Settings */}
 			<div className="flex items-center gap-1.5">
-				<div className="hidden items-center gap-0.5 rounded-xl border border-[var(--pe-border)] bg-[var(--pe-bg-panel-subtle)] p-0.5 md:flex">
+				<div className="hidden items-center gap-0.5 rounded-xl border border-(--pe-border) bg-(--pe-bg-panel-subtle) p-0.5 md:flex">
 					<IconButton
 						className={iconClass}
 						label="Zoom out (-)"
@@ -336,8 +337,8 @@ export const TopBar = (): FunctionComponent => {
 					>
 						<MagnifyingGlassMinusIcon className={svgClass} />
 					</IconButton>
-					<span className="w-12 text-center text-xs font-medium tabular-nums text-[var(--pe-text-secondary)]">
-						{zoom * 100}%
+					<span className="w-12 text-center text-xs font-medium tabular-nums text-(--pe-text-secondary)">
+						{Math.round(zoom * 100)}%
 					</span>
 					<IconButton
 						className={iconClass}
@@ -364,7 +365,7 @@ export const TopBar = (): FunctionComponent => {
 						openDialog("help");
 					}}
 				>
-					<QuestionMarkCircleIcon className="h-[18px] w-[18px]" />
+					<QuestionMarkCircleIcon className="h-4.5 w-4.5" />
 				</IconButton>
 
 				<button
@@ -372,10 +373,10 @@ export const TopBar = (): FunctionComponent => {
 					aria-pressed={dialog === "settings"}
 					title="Studio settings (Ctrl+,)"
 					type="button"
-					className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--pe-accent)] ${
+					className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent) ${
 						dialog === "settings"
-							? "border-[var(--pe-accent-ring)] bg-[var(--pe-accent)] text-[var(--pe-accent-ink)]"
-							: "border-[var(--pe-border)] bg-[var(--pe-bg-control)] text-[var(--pe-text)] hover:bg-[var(--pe-bg-control-hover)]"
+							? "border-(--pe-accent-ring) bg-(--pe-accent) text-(--pe-accent-ink)"
+							: "border-(--pe-border) bg-(--pe-bg-control) text-(--pe-text) hover:bg-(--pe-bg-control-hover)"
 					}`}
 					onClick={() => {
 						openDialog("settings");

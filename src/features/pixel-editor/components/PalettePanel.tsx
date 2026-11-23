@@ -63,7 +63,7 @@ export const PalettePanel = (): FunctionComponent => {
 			actions={
 				<div className="flex items-center gap-2 text-[10px]">
 					<button
-						className="font-medium text-[var(--pe-text-muted)] hover:text-[var(--pe-text)]"
+						className="font-medium text-(--pe-text-muted) hover:text-(--pe-text)"
 						title="Extract colors already on the canvas"
 						type="button"
 						onClick={paletteFromCanvas}
@@ -71,7 +71,7 @@ export const PalettePanel = (): FunctionComponent => {
 						From canvas
 					</button>
 					<button
-						className="font-medium text-[var(--pe-text-muted)] hover:text-[var(--pe-text)]"
+						className="font-medium text-(--pe-text-muted) hover:text-(--pe-text)"
 						type="button"
 						onClick={() => {
 							setPalette(DEFAULT_PALETTE);
@@ -85,7 +85,7 @@ export const PalettePanel = (): FunctionComponent => {
 			<div className="mb-2">
 				<button
 					ref={triggerReference}
-					className="flex w-full items-center justify-between rounded-lg border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2.5 py-1.5 text-left text-xs text-[var(--pe-text)] transition-colors hover:bg-[var(--pe-bg-control-hover)]"
+					className="flex w-full items-center justify-between rounded-lg border border-(--pe-border) bg-(--pe-bg-control) px-2.5 py-1.5 text-left text-xs text-(--pe-text) transition-colors hover:bg-(--pe-bg-control-hover)"
 					popoverTarget={popoverId}
 					style={PRESET_ANCHOR}
 					type="button"
@@ -95,14 +95,14 @@ export const PalettePanel = (): FunctionComponent => {
 							? activePreset.name
 							: `Custom Palette (${palette.length})`}
 					</span>
-					<span className="ml-1 shrink-0 text-[10px] text-[var(--pe-text-muted)]">
+					<span className="ml-1 shrink-0 text-[10px] text-(--pe-text-muted)">
 						Presets ▾
 					</span>
 				</button>
 
 				<div
 					ref={popoverReference}
-					className="editor-popover editor-scrollbar w-64 rounded-xl border border-[var(--pe-border-strong)] bg-[var(--pe-bg-panel)] p-1.5 text-xs text-[var(--pe-text)]"
+					className="editor-popover editor-scrollbar w-64 rounded-xl border border-(--pe-border-strong) bg-(--pe-bg-panel) p-1.5 text-xs text-(--pe-text)"
 					id={popoverId}
 					popover="auto"
 					style={PRESET_POPOVER_POS}
@@ -115,7 +115,7 @@ export const PalettePanel = (): FunctionComponent => {
 						}
 					}}
 				>
-					<div className="mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--pe-text-muted)]">
+					<div className="mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-(--pe-text-muted)">
 						Built-in Palettes ({BUILT_IN_PALETTES.length})
 					</div>
 					<div className="space-y-1">
@@ -128,8 +128,8 @@ export const PalettePanel = (): FunctionComponent => {
 									type="button"
 									className={`flex w-full flex-col gap-1 rounded-lg px-2 py-1.5 text-left transition-colors ${
 										isSelected
-											? "bg-[var(--pe-accent-soft)] text-[var(--pe-text)] ring-1 ring-[var(--pe-accent-ring)]"
-											: "hover:bg-[var(--pe-bg-control-hover)]"
+											? "bg-(--pe-accent-soft) text-(--pe-text) ring-1 ring-(--pe-accent-ring)"
+											: "hover:bg-(--pe-bg-control-hover)"
 									}`}
 									onClick={() => {
 										setPalette(preset.colors);
@@ -141,11 +141,11 @@ export const PalettePanel = (): FunctionComponent => {
 											{isSelected ? "✓ " : ""}
 											{preset.name}
 										</span>
-										<span className="shrink-0 text-[10px] text-[var(--pe-text-muted)]">
+										<span className="shrink-0 text-[10px] text-(--pe-text-muted)">
 											{preset.colors.length}
 										</span>
 									</div>
-									<div className="flex h-2 w-full overflow-hidden rounded-sm border border-[var(--pe-border)]">
+									<div className="flex h-2 w-full overflow-hidden rounded-sm border border-(--pe-border)">
 										{preset.colors.slice(0, 16).map((swatch) => (
 											<span
 												key={swatch}
@@ -171,10 +171,10 @@ export const PalettePanel = (): FunctionComponent => {
 							type="button"
 							className={`swatch-preserve block aspect-square w-full rounded-sm border transition-transform hover:scale-105 ${
 								swatch === primaryColor
-									? "border-white ring-2 ring-[var(--pe-accent)]"
+									? "border-white ring-2 ring-(--pe-accent)"
 									: swatch === secondaryColor
-										? "border-[var(--pe-text)]"
-										: "border-[var(--pe-border)]"
+										? "border-(--pe-text)"
+										: "border-(--pe-border)"
 							}`}
 							onClick={() => {
 								setPrimaryColor(swatch);
@@ -186,7 +186,7 @@ export const PalettePanel = (): FunctionComponent => {
 						/>
 						<button
 							aria-label={`Remove ${swatch}`}
-							className="absolute -top-1 -right-1 hidden h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--pe-bg-chrome)] text-[9px] leading-none text-[var(--pe-text)] ring-1 ring-[var(--pe-border-strong)] group-hover:flex hover:bg-[var(--pe-danger)] hover:text-white"
+							className="absolute -top-1 -right-1 hidden h-3.5 w-3.5 items-center justify-center rounded-full bg-(--pe-bg-chrome) text-[9px] leading-none text-(--pe-text) ring-1 ring-(--pe-border-strong) group-hover:flex hover:bg-(--pe-danger) hover:text-white"
 							type="button"
 							onClick={() => {
 								removePaletteColor(index);

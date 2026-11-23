@@ -58,9 +58,9 @@ const LayerItem = ({
 			draggable={!editing}
 			className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 transition-colors ${
 				isActive
-					? "border-[var(--pe-accent-ring)] bg-[var(--pe-accent-soft)] text-[var(--pe-text)]"
-					: "border-transparent bg-[var(--pe-bg-panel-subtle)] text-[var(--pe-text-secondary)] hover:bg-[var(--pe-bg-control)]"
-			} ${dropTarget ? "outline-2 -outline-offset-2 outline-[var(--pe-accent)]" : ""}`}
+					? "border-(--pe-accent-ring) bg-(--pe-accent-soft) text-(--pe-text)"
+					: "border-transparent bg-(--pe-bg-panel-subtle) text-(--pe-text-secondary) hover:bg-(--pe-bg-control)"
+			} ${dropTarget ? "outline-2 -outline-offset-2 outline-(--pe-accent)" : ""}`}
 			onDragLeave={() => {
 				setDropTarget(false);
 			}}
@@ -91,7 +91,7 @@ const LayerItem = ({
 			<button
 				aria-label={layer.visible ? `Hide ${layer.name}` : `Show ${layer.name}`}
 				aria-pressed={layer.visible}
-				className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[var(--pe-text-muted)] hover:bg-[var(--pe-bg-control-hover)] hover:text-[var(--pe-text)]"
+				className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-(--pe-text-muted) hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text)"
 				title="Toggle visibility (Alt+click to solo)"
 				type="button"
 				onClick={(event) => {
@@ -112,10 +112,10 @@ const LayerItem = ({
 				aria-pressed={Boolean(layer.locked)}
 				title={layer.locked ? "Unlock layer" : "Lock layer"}
 				type="button"
-				className={`flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-[var(--pe-bg-control-hover)] ${
+				className={`flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-(--pe-bg-control-hover) ${
 					layer.locked
-						? "text-[var(--pe-warn-ink)]"
-						: "text-[var(--pe-text-muted)] hover:text-[var(--pe-text)]"
+						? "text-(--pe-warn-ink)"
+						: "text-(--pe-text-muted) hover:text-(--pe-text)"
 				}`}
 				onClick={(event) => {
 					event.stopPropagation();
@@ -131,7 +131,7 @@ const LayerItem = ({
 
 			{layer.kind === "reference" && (
 				<span
-					className="shrink-0 rounded bg-[var(--pe-warn-soft)] px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--pe-warn-ink)]"
+					className="shrink-0 rounded bg-(--pe-warn-soft) px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-(--pe-warn-ink)"
 					title="Reference layer (high-res guide, excluded from export)"
 				>
 					Ref
@@ -141,7 +141,7 @@ const LayerItem = ({
 			{editing ? (
 				<input
 					autoFocus
-					className="min-w-0 flex-1 rounded border border-[var(--pe-accent)] bg-[var(--pe-bg-panel)] px-1 py-0 text-[11px] text-[var(--pe-text)] outline-none"
+					className="min-w-0 flex-1 rounded border border-(--pe-accent) bg-(--pe-bg-panel) px-1 py-0 text-[11px] text-(--pe-text) outline-none"
 					value={draft}
 					onBlur={commitRename}
 					onChange={(event) => {
@@ -160,12 +160,12 @@ const LayerItem = ({
 					aria-pressed={isActive}
 					title="Click to select · Double-click to rename · Drag to reorder layers"
 					type="button"
-					className={`min-w-0 flex-1 truncate text-left text-[11px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--pe-accent)] ${
+					className={`min-w-0 flex-1 truncate text-left text-[11px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent) ${
 						!layer.visible
-							? "text-[var(--pe-text-muted)] line-through"
+							? "text-(--pe-text-muted) line-through"
 							: isActive
-								? "font-semibold text-[var(--pe-text)]"
-								: "text-[var(--pe-text-secondary)]"
+								? "font-semibold text-(--pe-text)"
+								: "text-(--pe-text-secondary)"
 					}`}
 					onClick={() => {
 						setActiveLayer(layerIndex);
@@ -180,7 +180,7 @@ const LayerItem = ({
 			)}
 
 			{layer.opacity < 100 && !editing && (
-				<span className="shrink-0 text-[10px] tabular-nums text-[var(--pe-text-muted)]">
+				<span className="shrink-0 text-[10px] tabular-nums text-(--pe-text-muted)">
 					{layer.opacity}%
 				</span>
 			)}
@@ -213,7 +213,7 @@ export const LayersPanel = (): FunctionComponent => {
 
 	return (
 		<PanelCard collapsible badge={layerCount} title="Layers">
-			<div className="mb-2 flex flex-wrap items-center gap-0.5 rounded-lg border border-[var(--pe-border-subtle)] bg-[var(--pe-bg-panel-subtle)] p-1">
+			<div className="mb-2 flex flex-wrap items-center gap-0.5 rounded-lg border border-(--pe-border-subtle) bg-(--pe-bg-panel-subtle) p-1">
 				<IconButton
 					className={small}
 					disabled={layerCount >= MAX_LAYERS}
@@ -293,10 +293,10 @@ export const LayersPanel = (): FunctionComponent => {
 			</div>
 
 			{activeLayerObject && (
-				<label className="mb-2 flex items-center justify-between gap-2 text-[11px] text-[var(--pe-text-muted)]">
+				<label className="mb-2 flex items-center justify-between gap-2 text-[11px] text-(--pe-text-muted)">
 					<span>Opacity</span>
 					<input
-						className="w-28 accent-[var(--pe-accent)]"
+						className="w-28 accent-(--pe-accent)"
 						max={100}
 						min={0}
 						type="range"
@@ -305,7 +305,7 @@ export const LayersPanel = (): FunctionComponent => {
 							setLayerOpacity(activeLayer, Number(event.target.value));
 						}}
 					/>
-					<span className="w-8 text-right tabular-nums text-[var(--pe-text)]">
+					<span className="w-8 text-right tabular-nums text-(--pe-text)">
 						{activeLayerObject.opacity}%
 					</span>
 				</label>

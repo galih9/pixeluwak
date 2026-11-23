@@ -12,6 +12,7 @@ export const StatusBar = (): FunctionComponent => {
 	const floating = useEditorStore((state) => state.floating);
 	const notice = useEditorStore((state) => state.notice);
 	const clearNotice = useEditorStore((state) => state.clearNotice);
+	const openDialog = useEditorStore((state) => state.openDialog);
 
 	const bounds = useMemo(
 		() => (selection ? maskBounds(selection, width, height) : null),
@@ -27,23 +28,30 @@ export const StatusBar = (): FunctionComponent => {
 	}, [notice, clearNotice]);
 
 	return (
-		<footer className="flex h-7 shrink-0 items-center gap-4 border-t border-[var(--pe-border)] bg-[var(--pe-bg-chrome)] px-3 text-[11px] tabular-nums text-[var(--pe-text-muted)]">
-			<span className="w-20 text-[var(--pe-text-secondary)]">
+		<footer className="pe-statusbar flex h-7 shrink-0 items-center gap-4 border-t border-(--pe-border) bg-(--pe-bg-chrome) px-3 text-[11px] tabular-nums text-(--pe-text-muted)">
+			<span className="w-20 text-(--pe-text-secondary)">
 				{cursor ? `x ${cursor.x}, y ${cursor.y}` : "—"}
 			</span>
-			<span>
+			<button
+				className="rounded px-1.5 py-0.5 text-(--pe-text-secondary) transition-colors hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent)"
+				title="Resize canvas (Shift+R)"
+				type="button"
+				onClick={() => {
+					openDialog("resize");
+				}}
+			>
 				Canvas {width}×{height}
-			</span>
+			</button>
 			<span>Zoom {zoom}×</span>
 			{bounds && (
-				<span className="text-[var(--pe-text-secondary)]">
+				<span className="text-(--pe-text-secondary)">
 					Selection {bounds.width}×{bounds.height}
 					{floating ? ` · moved ${floating.offsetX}, ${floating.offsetY}` : ""}
 				</span>
 			)}
 			{notice ? (
 				<span
-					className="ml-auto rounded-md bg-[var(--pe-accent-soft)] px-2 py-0.5 font-medium text-[var(--pe-accent-soft-ink)]"
+					className="ml-auto rounded-md bg-(--pe-accent-soft) px-2 py-0.5 font-medium text-(--pe-accent-soft-ink)"
 					role="status"
 				>
 					{notice.message}

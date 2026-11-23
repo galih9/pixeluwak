@@ -23,10 +23,10 @@ import { ToolIcon } from "./ToolIcon";
 import { Divider, TextButton, Toggle } from "./ui";
 
 const inputClass =
-	"rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-0.5 text-xs text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]";
+	"rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-1.5 py-0.5 text-xs text-(--pe-text) outline-none focus:border-(--pe-accent)";
 
 const Hint = ({ children }: { children: string }): FunctionComponent => (
-	<span className="ml-auto hidden shrink-0 pl-2 text-[11px] text-[var(--pe-text-muted)] xl:inline">
+	<span className="ml-auto hidden shrink-0 pl-2 text-[11px] text-(--pe-text-muted) xl:inline">
 		{children}
 	</span>
 );
@@ -48,10 +48,10 @@ const NumberSlider = ({
 	width?: string;
 	onChange: (value: number) => void;
 }): FunctionComponent => (
-	<label className="flex shrink-0 items-center gap-2 text-xs text-[var(--pe-text-secondary)]">
+	<label className="flex shrink-0 items-center gap-2 text-xs text-(--pe-text-secondary)">
 		{label}
 		<input
-			className={`${width} accent-[var(--pe-accent)]`}
+			className={`${width} accent-(--pe-accent)`}
 			max={max}
 			min={min}
 			type="range"
@@ -60,7 +60,7 @@ const NumberSlider = ({
 				onChange(Number(event.target.value));
 			}}
 		/>
-		<span className="w-9 tabular-nums text-[var(--pe-text)]">
+		<span className="w-9 tabular-nums text-(--pe-text)">
 			{value}
 			{suffix}
 		</span>
@@ -89,10 +89,10 @@ const BrushOptions = ({
 
 	return (
 		<>
-			<label className="flex shrink-0 items-center gap-2 text-xs text-[var(--pe-text-secondary)]">
+			<label className="flex shrink-0 items-center gap-2 text-xs text-(--pe-text-secondary)">
 				Size
 				<input
-					className="w-24 accent-[var(--pe-accent)]"
+					className="w-24 accent-(--pe-accent)"
 					disabled={brushShape === "custom"}
 					max={MAX_BRUSH_SIZE}
 					min={1}
@@ -102,7 +102,7 @@ const BrushOptions = ({
 						setBrushSize(Number(event.target.value));
 					}}
 				/>
-				<span className="w-10 tabular-nums text-[var(--pe-text)]">
+				<span className="w-10 tabular-nums text-(--pe-text)">
 					{brushShape === "custom"
 						? `${customBrush.width}×${customBrush.height}`
 						: `${brushSize}px`}
@@ -161,7 +161,7 @@ const CustomBrushThumbnail = ({
 	return (
 		<div
 			aria-hidden="true"
-			className="swatch-preserve grid h-6 w-6 shrink-0 overflow-hidden rounded border border-[var(--pe-border)] bg-[var(--pe-bg-control)] p-0.5"
+			className="swatch-preserve grid h-6 w-6 shrink-0 overflow-hidden rounded border border-(--pe-border) bg-(--pe-bg-control) p-0.5"
 			style={{
 				gridTemplateColumns: `repeat(${brush.width}, minmax(0, 1fr))`,
 				gridTemplateRows: `repeat(${brush.height}, minmax(0, 1fr))`,
@@ -198,7 +198,7 @@ const CustomBrushOptionsBar = (): FunctionComponent => {
 	return (
 		<>
 			<CustomBrushThumbnail brush={customBrush} />
-			<label className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]">
+			<label className="flex shrink-0 items-center gap-1.5 text-xs text-(--pe-text-secondary)">
 				Pattern
 				<select
 					className={`${inputClass} py-1`}
@@ -391,7 +391,7 @@ const GradientOptionsBar = (): FunctionComponent => {
 				))}
 			</div>
 			<Divider />
-			<label className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]">
+			<label className="flex shrink-0 items-center gap-1.5 text-xs text-(--pe-text-secondary)">
 				Dither
 				<select
 					className={`${inputClass} py-1`}
@@ -407,10 +407,10 @@ const GradientOptionsBar = (): FunctionComponent => {
 					))}
 				</select>
 			</label>
-			<label className="flex shrink-0 items-center gap-2 text-xs text-[var(--pe-text-secondary)]">
+			<label className="flex shrink-0 items-center gap-2 text-xs text-(--pe-text-secondary)">
 				Bands
 				<input
-					className="w-16 accent-[var(--pe-accent)]"
+					className="w-16 accent-(--pe-accent)"
 					max={16}
 					min={0}
 					type="range"
@@ -419,7 +419,7 @@ const GradientOptionsBar = (): FunctionComponent => {
 						setOptions({ steps: Number(event.target.value) });
 					}}
 				/>
-				<span className="w-9 tabular-nums text-[var(--pe-text)]">
+				<span className="w-9 tabular-nums text-(--pe-text)">
 					{options.steps < 2 ? "Auto" : options.steps}
 				</span>
 			</label>
@@ -476,16 +476,16 @@ const LayerPickerOptionsBar = (): FunctionComponent => {
 
 	return (
 		<>
-			<span className="shrink-0 text-xs text-[var(--pe-text-secondary)]">
+			<span className="shrink-0 text-xs text-(--pe-text-secondary)">
 				Active:{" "}
-				<strong className="font-semibold text-[var(--pe-text)]">
+				<strong className="font-semibold text-(--pe-text)">
 					{activeLayer?.name ?? "Layer"}
 				</strong>
 			</span>
 			{hoveredLayer && (
 				<>
 					<Divider />
-					<span className="shrink-0 rounded bg-[var(--pe-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--pe-accent-soft-ink)]">
+					<span className="shrink-0 rounded bg-(--pe-accent-soft) px-2 py-0.5 text-xs font-medium text-(--pe-accent-soft-ink)">
 						Hover: {hoveredLayer.name}
 					</span>
 				</>
@@ -603,7 +603,7 @@ const TextOptions = (): FunctionComponent => {
 			<input
 				ref={inputRef}
 				aria-label="Text"
-				className="h-7 w-44 shrink-0 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 text-xs text-[var(--pe-text)] outline-none placeholder:text-[var(--pe-text-muted)] focus:border-[var(--pe-accent)]"
+				className="h-7 w-44 shrink-0 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 text-xs text-(--pe-text) outline-none placeholder:text-(--pe-text-muted) focus:border-(--pe-accent)"
 				placeholder={placed ? "Type your text…" : "Click the canvas first"}
 				value={textValue}
 				onChange={(event) => {
@@ -709,7 +709,7 @@ const DitherOptions = (): FunctionComponent => {
 	return (
 		<>
 			<Divider />
-			<label className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]">
+			<label className="flex shrink-0 items-center gap-1.5 text-xs text-(--pe-text-secondary)">
 				Pattern
 				<select
 					className={`${inputClass} py-1`}
@@ -760,11 +760,11 @@ const ReplaceOptions = (): FunctionComponent => {
 
 	return (
 		<>
-			<div className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]">
+			<div className="flex shrink-0 items-center gap-1.5 text-xs text-(--pe-text-secondary)">
 				<span>From</span>
 				{replaceFromColor ? (
 					<button
-						className="flex items-center gap-1 rounded border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--pe-text)] hover:border-[var(--pe-border-strong)]"
+						className="flex items-center gap-1 rounded border border-(--pe-border) bg-(--pe-bg-control) px-1.5 py-0.5 font-mono text-[11px] text-(--pe-text) hover:border-(--pe-border-strong)"
 						title="Click to clear source color"
 						type="button"
 						onClick={() => {
@@ -772,19 +772,19 @@ const ReplaceOptions = (): FunctionComponent => {
 						}}
 					>
 						<span
-							className="swatch-preserve h-3 w-3 rounded-sm border border-[var(--pe-border-strong)]"
+							className="swatch-preserve h-3 w-3 rounded-sm border border-(--pe-border-strong)"
 							style={{ background: replaceFromColor }}
 						/>
 						{replaceFromColor}
 					</button>
 				) : (
-					<span className="rounded border border-dashed border-[var(--pe-border-strong)] px-1.5 py-0.5 text-[11px] text-[var(--pe-text-muted)]">
+					<span className="rounded border border-dashed border-(--pe-border-strong) px-1.5 py-0.5 text-[11px] text-(--pe-text-muted)">
 						Click canvas
 					</span>
 				)}
 				<span>→</span>
 				<span
-					className="swatch-preserve h-4 w-4 rounded-sm border border-[var(--pe-border-strong)]"
+					className="swatch-preserve h-4 w-4 rounded-sm border border-(--pe-border-strong)"
 					style={{ background: primaryColor }}
 					title={`Replace with ${primaryColor}`}
 				/>
@@ -798,7 +798,7 @@ const ReplaceOptions = (): FunctionComponent => {
 				width="w-20"
 				onChange={setReplaceTolerance}
 			/>
-			<label className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]">
+			<label className="flex shrink-0 items-center gap-1.5 text-xs text-(--pe-text-secondary)">
 				Scope
 				<select
 					className={`${inputClass} py-1`}
@@ -854,7 +854,7 @@ const ReferenceOptions = (): FunctionComponent => {
 	return (
 		<>
 			<Divider />
-			<span className="shrink-0 rounded bg-[var(--pe-warn-soft)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--pe-warn-ink)]">
+			<span className="shrink-0 rounded bg-(--pe-warn-soft) px-1.5 py-0.5 text-[10px] font-medium text-(--pe-warn-ink)">
 				Reference
 			</span>
 			<NumberSlider
@@ -1082,10 +1082,10 @@ export const ToolOptions = (): FunctionComponent => {
 	}
 
 	return (
-		<div className="editor-scrollbar flex h-10 shrink-0 items-center gap-2.5 overflow-x-auto border-b border-[var(--pe-border-subtle)] bg-[var(--pe-bg-panel-subtle)] px-3">
-			<span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--pe-border)] bg-[var(--pe-bg-panel)] px-2 py-1 text-[11px] font-semibold text-[var(--pe-text)] shadow-2xs">
+		<div className="editor-scrollbar flex h-10 shrink-0 items-center gap-2.5 overflow-x-auto border-b border-(--pe-border-subtle) bg-(--pe-bg-panel-subtle) px-3">
+			<span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-(--pe-border) bg-(--pe-bg-panel) px-2 py-1 text-[11px] font-semibold text-(--pe-text) shadow-2xs">
 				<ToolIcon
-					className="h-3.5 w-3.5 text-[var(--pe-accent)]"
+					className="h-3.5 w-3.5 text-(--pe-accent)"
 					tool={tool}
 				/>
 				<span>{label}</span>

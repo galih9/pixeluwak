@@ -150,7 +150,7 @@ const FrameThumb = ({
 	const scale = size / Math.max(width, height);
 	return (
 		<div
-			className="preview-checker flex items-center justify-center overflow-hidden rounded-sm border border-[var(--pe-border)]"
+			className="preview-checker flex items-center justify-center overflow-hidden rounded-sm border border-(--pe-border)"
 			style={{ width: size, height: size }}
 		>
 			<canvas
@@ -202,7 +202,7 @@ const TagDialog = ({
 		onClose();
 	};
 	const inputClass =
-		"rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-2 py-1 text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]";
+		"rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-2 py-1 text-(--pe-text) outline-none focus:border-(--pe-accent)";
 
 	return (
 		<Modal
@@ -228,7 +228,7 @@ const TagDialog = ({
 			onClose={onClose}
 		>
 			<div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-3">
-				<span className="text-xs text-[var(--pe-text-muted)]">Name</span>
+				<span className="text-xs text-(--pe-text-muted)">Name</span>
 				<input
 					autoFocus
 					className={inputClass}
@@ -240,7 +240,7 @@ const TagDialog = ({
 						if (event.key === "Enter") save();
 					}}
 				/>
-				<span className="text-xs text-[var(--pe-text-muted)]">Frames</span>
+				<span className="text-xs text-(--pe-text-muted)">Frames</span>
 				<div className="flex items-center gap-2">
 					<input
 						aria-label="First frame"
@@ -253,7 +253,7 @@ const TagDialog = ({
 							setFrom(event.target.value);
 						}}
 					/>
-					<span className="text-[var(--pe-text-muted)]">to</span>
+					<span className="text-(--pe-text-muted)">to</span>
 					<input
 						aria-label="Last frame"
 						className={`${inputClass} w-20`}
@@ -265,11 +265,11 @@ const TagDialog = ({
 							setTo(event.target.value);
 						}}
 					/>
-					<span className="text-xs text-[var(--pe-text-muted)]">
+					<span className="text-xs text-(--pe-text-muted)">
 						of {frameCount}
 					</span>
 				</div>
-				<span className="text-xs text-[var(--pe-text-muted)]">Direction</span>
+				<span className="text-xs text-(--pe-text-muted)">Direction</span>
 				<div className="flex gap-1.5">
 					{DIRECTIONS.map(([value, label]) => (
 						<TextButton
@@ -283,7 +283,7 @@ const TagDialog = ({
 						</TextButton>
 					))}
 				</div>
-				<span className="text-xs text-[var(--pe-text-muted)]">Color</span>
+				<span className="text-xs text-(--pe-text-muted)">Color</span>
 				<div className="flex items-center gap-1.5">
 					{TAG_COLORS.map((swatch) => (
 						<button
@@ -292,7 +292,7 @@ const TagDialog = ({
 							style={{ backgroundColor: swatch }}
 							type="button"
 							className={`swatch-preserve h-5 w-5 rounded ${
-								swatch === color ? "ring-2 ring-[var(--pe-text)]" : ""
+								swatch === color ? "ring-2 ring-(--pe-text)" : ""
 							}`}
 							onClick={() => {
 								setColor(swatch);
@@ -301,7 +301,7 @@ const TagDialog = ({
 					))}
 					<input
 						aria-label="Custom tag color"
-						className="h-6 w-8 cursor-pointer rounded border border-[var(--pe-border)] bg-transparent"
+						className="h-6 w-8 cursor-pointer rounded border border-(--pe-border) bg-transparent"
 						type="color"
 						value={color}
 						onChange={(event) => {
@@ -348,7 +348,7 @@ const TagLanes = ({
 	if (lanes.length === 0) {
 		return (
 			<div
-				className="flex items-center whitespace-nowrap px-1.5 text-[10px] text-[var(--pe-text-muted)]"
+				className="flex items-center whitespace-nowrap px-1.5 text-[10px] text-(--pe-text-muted)"
 				style={{ height: TAG_LANE }}
 			>
 				Shift+click frames, then press <TagIcon className="mx-1 h-3 w-3" />
@@ -441,14 +441,14 @@ const CelCell = ({
 			aria-label={`Layer ${layerIndex + 1}, frame ${frameIndex + 1}`}
 			style={{ width: COLUMN, height: ROW }}
 			type="button"
-			className={`relative flex shrink-0 items-center justify-center border-r border-[var(--pe-border-subtle)] ${
+			className={`relative flex shrink-0 items-center justify-center border-r border-(--pe-border-subtle) ${
 				isActive
-					? "bg-[var(--pe-accent-soft)]"
+					? "bg-(--pe-accent-soft)"
 					: inRange && isActive === false
-						? "bg-[var(--pe-accent-soft)]/50 hover:bg-[var(--pe-accent-soft)]"
+						? "bg-(--pe-accent-soft)/50 hover:bg-(--pe-accent-soft)"
 						: isReference
-							? "bg-[var(--pe-warn-soft)]/50 hover:bg-[var(--pe-warn-soft)]"
-							: "hover:bg-[var(--pe-bg-control-hover)]"
+							? "bg-(--pe-warn-soft)/50 hover:bg-(--pe-warn-soft)"
+							: "hover:bg-(--pe-bg-control-hover)"
 			}`}
 			title={
 				isReference
@@ -463,26 +463,26 @@ const CelCell = ({
 		>
 			{isReference ? (
 				<>
-					<span className="pointer-events-none absolute inset-x-0 h-0.5 bg-[var(--pe-warn-ink)]/35" />
-					<span className="relative h-1.5 w-1.5 rounded-full bg-[var(--pe-warn-ink)]" />
+					<span className="pointer-events-none absolute inset-x-0 h-0.5 bg-(--pe-warn-ink)/35" />
+					<span className="relative h-1.5 w-1.5 rounded-full bg-(--pe-warn-ink)" />
 				</>
 			) : (
 				<>
 					{(linkState === "middle" || linkState === "end") && (
-						<span className="pointer-events-none absolute right-1/2 left-0 h-0.5 bg-[var(--pe-accent)]" />
+						<span className="pointer-events-none absolute right-1/2 left-0 h-0.5 bg-(--pe-accent)" />
 					)}
 					{(linkState === "middle" || linkState === "start") && (
-						<span className="pointer-events-none absolute right-0 left-1/2 h-0.5 bg-[var(--pe-accent)]" />
+						<span className="pointer-events-none absolute right-0 left-1/2 h-0.5 bg-(--pe-accent)" />
 					)}
 					<span
 						className={`relative h-2.5 w-2.5 rounded-full ${
 							linkState !== "none"
 								? empty
-									? "border-2 border-[var(--pe-accent)] bg-[var(--pe-bg-panel)]"
-									: "border border-[var(--pe-accent-ink)] bg-[var(--pe-accent)]"
+									? "border-2 border-(--pe-accent) bg-(--pe-bg-panel)"
+									: "border border-(--pe-accent-ink) bg-(--pe-accent)"
 								: empty
-									? "border border-[var(--pe-border-strong)]"
-									: "bg-[var(--pe-text-secondary)]"
+									? "border border-(--pe-border-strong)"
+									: "bg-(--pe-text-secondary)"
 						}`}
 					/>
 				</>
@@ -529,11 +529,11 @@ const LayerRowHeader = ({
 		<div
 			draggable={!editing}
 			style={{ width: NAMES, height: ROW }}
-			className={`sticky left-0 z-[5] flex shrink-0 items-center gap-1 border-r border-[var(--pe-border)] px-1.5 ${
+			className={`sticky left-0 z-5 flex shrink-0 items-center gap-1 border-r border-(--pe-border) px-1.5 ${
 				isActive
-					? "bg-[var(--pe-bg-active-row)] text-[var(--pe-text)]"
-					: "bg-[var(--pe-bg-panel)] text-[var(--pe-text-secondary)]"
-			} ${dropTarget ? "outline-2 -outline-offset-2 outline-[var(--pe-accent)]" : ""}`}
+					? "bg-(--pe-bg-active-row) text-(--pe-text)"
+					: "bg-(--pe-bg-panel) text-(--pe-text-secondary)"
+			} ${dropTarget ? "outline-2 -outline-offset-2 outline-(--pe-accent)" : ""}`}
 			onClick={() => {
 				setActiveLayer(layerIndex);
 			}}
@@ -567,7 +567,7 @@ const LayerRowHeader = ({
 			<button
 				aria-label={layer.visible ? `Hide ${layer.name}` : `Show ${layer.name}`}
 				aria-pressed={layer.visible}
-				className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[var(--pe-text-muted)] hover:bg-[var(--pe-bg-control-hover)] hover:text-[var(--pe-text)]"
+				className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-(--pe-text-muted) hover:bg-(--pe-bg-control-hover) hover:text-(--pe-text)"
 				title="Toggle visibility (Alt+click to solo)"
 				type="button"
 				onClick={(event) => {
@@ -588,10 +588,10 @@ const LayerRowHeader = ({
 				aria-pressed={Boolean(layer.locked)}
 				title={layer.locked ? "Unlock layer" : "Lock layer"}
 				type="button"
-				className={`flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-[var(--pe-bg-control-hover)] ${
+				className={`flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-(--pe-bg-control-hover) ${
 					layer.locked
-						? "text-[var(--pe-warn-ink)]"
-						: "text-[var(--pe-text-muted)] hover:text-[var(--pe-text)]"
+						? "text-(--pe-warn-ink)"
+						: "text-(--pe-text-muted) hover:text-(--pe-text)"
 				}`}
 				onClick={(event) => {
 					event.stopPropagation();
@@ -607,7 +607,7 @@ const LayerRowHeader = ({
 
 			{layer.kind === "reference" && (
 				<span
-					className="shrink-0 rounded bg-[var(--pe-warn-soft)] px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--pe-warn-ink)]"
+					className="shrink-0 rounded bg-(--pe-warn-soft) px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-(--pe-warn-ink)"
 					title="Reference layer (high-res guide, excluded from export)"
 				>
 					Ref
@@ -617,7 +617,7 @@ const LayerRowHeader = ({
 			{editing ? (
 				<input
 					autoFocus
-					className="min-w-0 flex-1 rounded border border-[var(--pe-accent)] bg-[var(--pe-bg-panel)] px-1 py-0 text-[11px] text-[var(--pe-text)] outline-none"
+					className="min-w-0 flex-1 rounded border border-(--pe-accent) bg-(--pe-bg-panel) px-1 py-0 text-[11px] text-(--pe-text) outline-none"
 					value={draft}
 					onBlur={commitRename}
 					onChange={(event) => {
@@ -636,10 +636,10 @@ const LayerRowHeader = ({
 					title="Double-click to rename · drag to reorder layers"
 					className={`min-w-0 flex-1 truncate text-left text-[11px] ${
 						!layer.visible
-							? "text-[var(--pe-text-muted)] line-through"
+							? "text-(--pe-text-muted) line-through"
 							: isActive
-								? "font-semibold text-[var(--pe-accent-soft-ink)]"
-								: "text-[var(--pe-text-secondary)]"
+								? "font-semibold text-(--pe-accent-soft-ink)"
+								: "text-(--pe-text-secondary)"
 					}`}
 					onDoubleClick={(event) => {
 						event.stopPropagation();
@@ -651,7 +651,7 @@ const LayerRowHeader = ({
 			)}
 
 			{layer.opacity < 100 && !editing && (
-				<span className="shrink-0 text-[10px] tabular-nums text-[var(--pe-text-muted)]">
+				<span className="shrink-0 text-[10px] tabular-nums text-(--pe-text-muted)">
 					{layer.opacity}%
 				</span>
 			)}
@@ -684,15 +684,15 @@ const FrameHeader = ({
 			style={{ width: compact ? COLUMN : FRAME_CARD_COLUMN }}
 			title={`Frame ${index + 1} · ${duration} ms · drag to reorder, Shift+click to select a range`}
 			type="button"
-			className={`relative flex shrink-0 flex-col items-center gap-1 border-r border-[var(--pe-border-subtle)] ${
+			className={`relative flex shrink-0 flex-col items-center gap-1 border-r border-(--pe-border-subtle) ${
 				compact ? "pt-1 pb-0.5" : "px-1 py-1.5"
 			} ${
 				isCurrent
-					? "bg-[var(--pe-accent-soft)]"
+					? "bg-(--pe-accent-soft)"
 					: inRange
-						? "bg-[var(--pe-accent-soft)]/45"
-						: "hover:bg-[var(--pe-bg-control-hover)]"
-			} ${dropTarget ? "outline-2 -outline-offset-2 outline-[var(--pe-accent)]" : ""}`}
+						? "bg-(--pe-accent-soft)/45"
+						: "hover:bg-(--pe-bg-control-hover)"
+			} ${dropTarget ? "outline-2 -outline-offset-2 outline-(--pe-accent)" : ""}`}
 			onClick={(event) => {
 				onClick(index, event.shiftKey);
 			}}
@@ -728,15 +728,15 @@ const FrameHeader = ({
 				<span
 					className={`text-[10px] leading-none tabular-nums ${
 						isCurrent
-							? "font-semibold text-[var(--pe-accent-soft-ink)]"
-							: "text-[var(--pe-text-muted)]"
+							? "font-semibold text-(--pe-accent-soft-ink)"
+							: "text-(--pe-text-muted)"
 					}`}
 				>
 					{compact ? index + 1 : `#${index + 1}`}
 				</span>
 			</div>
 			{!compact && (
-				<span className="text-[9px] leading-none tabular-nums text-[var(--pe-text-muted)]">
+				<span className="text-[9px] leading-none tabular-nums text-(--pe-text-muted)">
 					{duration}ms
 				</span>
 			)}
@@ -863,10 +863,10 @@ export const Timeline = (): FunctionComponent => {
 	const icon = "h-4 w-4";
 
 	return (
-		<section className="shrink-0 border-t border-[var(--pe-border)] bg-[var(--pe-bg-panel)]">
+		<section className="shrink-0 border-t border-(--pe-border) bg-(--pe-bg-panel)">
 			{!collapsed && (
 				<div
-					className="h-1 cursor-row-resize bg-transparent transition-colors hover:bg-[var(--pe-accent-soft)]"
+					className="h-1 cursor-row-resize bg-transparent transition-colors hover:bg-(--pe-accent-soft)"
 					title="Drag to resize timeline height"
 					onPointerDown={startResize}
 				/>
@@ -886,11 +886,11 @@ export const Timeline = (): FunctionComponent => {
 						<ChevronDownIcon className={icon} />
 					)}
 				</IconButton>
-				<FilmIcon className="h-4 w-4 shrink-0 text-[var(--pe-text-muted)]" />
-				<span className="mr-1 shrink-0 text-xs font-semibold uppercase tracking-wide text-[var(--pe-text-muted)]">
+				<FilmIcon className="h-4 w-4 shrink-0 text-(--pe-text-muted)" />
+				<span className="mr-1 shrink-0 text-xs font-semibold uppercase tracking-wide text-(--pe-text-muted)">
 					{showLayers ? "Timeline" : "Frames"}
 				</span>
-				<span className="mr-1 shrink-0 text-xs tabular-nums text-[var(--pe-text-muted)]">
+				<span className="mr-1 shrink-0 text-xs tabular-nums text-(--pe-text-muted)">
 					{currentFrame + 1}/{frameCount}
 				</span>
 
@@ -944,10 +944,10 @@ export const Timeline = (): FunctionComponent => {
 				>
 					<ForwardIcon className={icon} />
 				</IconButton>
-				<label className="ml-1 flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]">
+				<label className="ml-1 flex shrink-0 items-center gap-1.5 text-xs text-(--pe-text-secondary)">
 					Loop
 					<select
-						className="max-w-32 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-0.5 text-xs text-[var(--pe-text)]"
+						className="max-w-32 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-1.5 py-0.5 text-xs text-(--pe-text)"
 						title="What Play loops over"
 						value={playTag ?? ""}
 						onChange={(event) => {
@@ -965,7 +965,7 @@ export const Timeline = (): FunctionComponent => {
 					</select>
 				</label>
 				<span
-					className="shrink-0 text-[10px] tabular-nums text-[var(--pe-text-muted)]"
+					className="shrink-0 text-[10px] tabular-nums text-(--pe-text-muted)"
 					title="Length of one loop"
 				>
 					{(loopLength / 1000).toFixed(2)}s
@@ -1012,7 +1012,7 @@ export const Timeline = (): FunctionComponent => {
 
 				<Divider />
 				<label
-					className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--pe-text-secondary)]"
+					className="flex shrink-0 items-center gap-1.5 text-xs text-(--pe-text-secondary)"
 					title={
 						rangeSize > 1
 							? `Sets the duration of frames ${range.from + 1}–${range.to + 1}`
@@ -1023,7 +1023,7 @@ export const Timeline = (): FunctionComponent => {
 					<input
 						key={`${current?.id ?? 0}-${current?.duration ?? 0}-${rangeSize}`}
 						aria-label="Frame duration in milliseconds"
-						className="w-16 rounded-md border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1.5 py-0.5 text-right text-xs tabular-nums text-[var(--pe-text)] outline-none focus:border-[var(--pe-accent)]"
+						className="w-16 rounded-md border border-(--pe-border) bg-(--pe-bg-control) px-1.5 py-0.5 text-right text-xs tabular-nums text-(--pe-text) outline-none focus:border-(--pe-accent)"
 						defaultValue={current?.duration ?? 100}
 						max={10_000}
 						min={10}
@@ -1068,10 +1068,10 @@ export const Timeline = (): FunctionComponent => {
 					<Square2StackIcon className={icon} />
 				</IconButton>
 				{onionSkin && (
-					<span className="flex shrink-0 items-center gap-1 text-[10px] text-[var(--pe-text-muted)]">
+					<span className="flex shrink-0 items-center gap-1 text-[10px] text-(--pe-text-muted)">
 						<input
 							aria-label="Onion skin frames before"
-							className="w-9 rounded border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1 py-0.5 text-right tabular-nums text-rose-400"
+							className="w-9 rounded border border-(--pe-border) bg-(--pe-bg-control) px-1 py-0.5 text-right tabular-nums text-rose-400"
 							max={5}
 							min={0}
 							title="Frames before (red)"
@@ -1083,7 +1083,7 @@ export const Timeline = (): FunctionComponent => {
 						/>
 						<input
 							aria-label="Onion skin frames after"
-							className="w-9 rounded border border-[var(--pe-border)] bg-[var(--pe-bg-control)] px-1 py-0.5 text-right tabular-nums text-sky-400"
+							className="w-9 rounded border border-(--pe-border) bg-(--pe-bg-control) px-1 py-0.5 text-right tabular-nums text-sky-400"
 							max={5}
 							min={0}
 							title="Frames after (blue)"
@@ -1097,7 +1097,7 @@ export const Timeline = (): FunctionComponent => {
 				)}
 
 				{currentTags.length > 0 && (
-					<span className="ml-auto flex shrink-0 items-center gap-1 pl-2 text-[10px] text-[var(--pe-text-muted)]">
+					<span className="ml-auto flex shrink-0 items-center gap-1 pl-2 text-[10px] text-(--pe-text-muted)">
 						in
 						{currentTags.map((tag) => (
 							<span
@@ -1114,8 +1114,8 @@ export const Timeline = (): FunctionComponent => {
 
 			{/* ------------------------ layers & cels bar ------------------------ */}
 			{!collapsed && showLayers && (
-				<div className="editor-scrollbar flex h-8 items-center gap-1 overflow-x-auto border-t border-[var(--pe-border-subtle)] bg-[var(--pe-bg-panel-subtle)] px-2">
-					<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[var(--pe-text-muted)]">
+				<div className="editor-scrollbar flex h-8 items-center gap-1 overflow-x-auto border-t border-(--pe-border-subtle) bg-(--pe-bg-panel-subtle) px-2">
+					<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-(--pe-text-muted)">
 						Layers
 					</span>
 					<IconButton
@@ -1196,10 +1196,10 @@ export const Timeline = (): FunctionComponent => {
 					</IconButton>
 
 					{activeLayerObject && (
-						<label className="ml-1 flex shrink-0 items-center gap-1.5 text-[11px] text-[var(--pe-text-muted)]">
+						<label className="ml-1 flex shrink-0 items-center gap-1.5 text-[11px] text-(--pe-text-muted)">
 							Opacity
 							<input
-								className="w-16 accent-[var(--pe-accent)]"
+								className="w-16 accent-(--pe-accent)"
 								max={100}
 								min={0}
 								type="range"
@@ -1208,14 +1208,14 @@ export const Timeline = (): FunctionComponent => {
 									store.setLayerOpacity(activeLayer, Number(event.target.value));
 								}}
 							/>
-							<span className="w-7 tabular-nums text-[var(--pe-text)]">
+							<span className="w-7 tabular-nums text-(--pe-text)">
 								{activeLayerObject.opacity}%
 							</span>
 						</label>
 					)}
 
 					<Divider />
-					<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[var(--pe-text-muted)]">
+					<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-(--pe-text-muted)">
 						Cels
 					</span>
 					<TextButton
@@ -1284,14 +1284,14 @@ export const Timeline = (): FunctionComponent => {
 			{!collapsed && (
 				<div
 					ref={scrollRef}
-					className="editor-scrollbar overflow-auto border-t border-[var(--pe-border-subtle)] bg-[var(--pe-bg-chrome)]"
+					className="editor-scrollbar overflow-auto border-t border-(--pe-border-subtle) bg-(--pe-bg-chrome)"
 					style={{ maxHeight: gridHeight }}
 				>
 					{showLayers ? (
 						<div style={{ width: NAMES + frameCount * COLUMN }}>
-							<div className="sticky top-0 z-10 flex bg-[var(--pe-bg-panel)]">
+							<div className="sticky top-0 z-10 flex bg-(--pe-bg-panel)">
 								<div
-									className="sticky left-0 z-10 flex shrink-0 flex-col justify-between border-r border-[var(--pe-border)] bg-[var(--pe-bg-panel)] px-2 py-1 text-[10px] uppercase tracking-wide text-[var(--pe-text-muted)]"
+									className="sticky left-0 z-10 flex shrink-0 flex-col justify-between border-r border-(--pe-border) bg-(--pe-bg-panel) px-2 py-1 text-[10px] uppercase tracking-wide text-(--pe-text-muted)"
 									style={{ width: NAMES }}
 								>
 									<span>Tags</span>
@@ -1308,7 +1308,7 @@ export const Timeline = (): FunctionComponent => {
 											}}
 										/>
 									</div>
-									<div className="flex border-b border-[var(--pe-border)]">
+									<div className="flex border-b border-(--pe-border)">
 										{frames.map((frame, index) => (
 											<FrameHeader
 												key={frame.id}
@@ -1325,9 +1325,9 @@ export const Timeline = (): FunctionComponent => {
 							{order.map((layerIndex) => (
 								<div
 									key={layers[layerIndex]?.id ?? layerIndex}
-									className={`flex border-b border-[var(--pe-border-subtle)] ${
+									className={`flex border-b border-(--pe-border-subtle) ${
 										layerIndex === activeLayer
-											? "bg-[var(--pe-bg-active-row)]/45"
+											? "bg-(--pe-bg-active-row)/45"
 											: ""
 									}`}
 								>
@@ -1349,7 +1349,7 @@ export const Timeline = (): FunctionComponent => {
 						</div>
 					) : (
 						<div style={{ width: frameCount * FRAME_CARD_COLUMN }}>
-							<div className="border-b border-[var(--pe-border-subtle)] py-0.5">
+							<div className="border-b border-(--pe-border-subtle) py-0.5">
 								<TagLanes
 									columnWidth={FRAME_CARD_COLUMN}
 									onEdit={setEditing}

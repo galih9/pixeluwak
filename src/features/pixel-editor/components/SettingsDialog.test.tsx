@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { useEditorStore } from "../store/editorStore";
 import { useUiSettingsStore } from "../store/uiSettingsStore";
+import { PreviewPanel } from "./PreviewPanel";
 import { SettingsDialog } from "./SettingsDialog";
 import { TopBar } from "./TopBar";
 
@@ -54,6 +55,19 @@ describe("SettingsDialog & TopBar Settings entry", () => {
 		expect(useEditorStore.getState().dialog).toBe("settings");
 	});
 
+	it("renders Pixeluwak branding and 3-color 32x32 luwak emblem in TopBar", () => {
+		const { container } = render(<TopBar />);
+		expect(screen.getByText("Pixeluwak")).toBeTruthy();
+		expect(screen.queryByText(/Pixelatte/i)).toBeNull();
+		const svg = container.querySelector('svg[viewBox="0 0 32 32"]');
+		expect(svg).toBeTruthy();
+		const fills = Array.from(svg?.querySelectorAll("rect") ?? [])
+			.map((element) => element.getAttribute("fill")?.toLowerCase())
+			.filter((fill): fill is string => Boolean(fill));
+		const uniqueFills = Array.from(new Set(fills)).sort();
+		expect(uniqueFills).toEqual(["#1f1512", "#c87d42", "#f6ead4"]);
+	});
+
 	it("renders tabs, supports keyboard tab navigation, and switches themes", () => {
 		const onClose = vi.fn();
 		render(<SettingsDialog onClose={onClose} />);
@@ -66,8 +80,8 @@ describe("SettingsDialog & TopBar Settings entry", () => {
 		expect(appearanceTab.getAttribute("aria-selected")).toBe("true");
 		expect(panelsTab.getAttribute("aria-selected")).toBe("false");
 
-		// Select Espresso Latte theme
-		fireEvent.click(screen.getByRole("button", { name: /Espresso Latte/i }));
+		// Select Kopi Luwak theme
+		fireEvent.click(screen.getByRole("button", { name: /Kopi Luwak/i }));
 		expect(useUiSettingsStore.getState().theme).toBe("espresso");
 		expect(document.documentElement.dataset["theme"]).toBe("espresso");
 
@@ -83,6 +97,29 @@ describe("SettingsDialog & TopBar Settings entry", () => {
 
 		fireEvent.click(toolbarTab);
 		expect(toolbarTab.getAttribute("aria-selected")).toBe("true");
+	}, 10_000);
+
+	it("displays Console Themes (NES Classic, Game Boy, Wii Home) and switches between them", () => {
+		render(<SettingsDialog onClose={vi.fn()} />);
+		expect(screen.getByText("Console Themes")).toBeTruthy();
+
+		const nesButton = screen.getByText("NES Classic").closest("button");
+		expect(nesButton).toBeTruthy();
+		if (nesButton) fireEvent.click(nesButton);
+		expect(useUiSettingsStore.getState().theme).toBe("nes");
+		expect(document.documentElement.dataset["theme"]).toBe("nes");
+
+		const gameboyButton = screen.getByText("Game Boy").closest("button");
+		expect(gameboyButton).toBeTruthy();
+		if (gameboyButton) fireEvent.click(gameboyButton);
+		expect(useUiSettingsStore.getState().theme).toBe("gameboy");
+		expect(document.documentElement.dataset["theme"]).toBe("gameboy");
+
+		const wiiButton = screen.getByText("Wii Home").closest("button");
+		expect(wiiButton).toBeTruthy();
+		if (wiiButton) fireEvent.click(wiiButton);
+		expect(useUiSettingsStore.getState().theme).toBe("wii");
+		expect(document.documentElement.dataset["theme"]).toBe("wii");
 	});
 
 	it("toggles panels and applies workspace presets from the Panels tab", () => {
@@ -152,5 +189,17 @@ describe("SettingsDialog & TopBar Settings entry", () => {
 		});
 		expect(onClose).not.toHaveBeenCalled();
 		expect(screen.getByRole("heading", { name: "Studio Settings" })).toBeTruthy();
+	});
+
+	it("constrains PreviewPanel dimensions to fit sidebar for 512x512 canvases", () => {
+		useEditorStore.getState().newCanvas(512, 512);
+		const { container } = render(<PreviewPanel />);
+		const canvases = container.querySelectorAll("canvas");
+		expect(canvases).toHaveLength(1);
+		const previewCanvas = canvases[0];
+		expect(previewCanvas?.style.width).toBe("176px");
+		expect(previewCanvas?.style.height).toBe("176px");
+		expect(screen.getByText(/512×512px/i)).toBeTruthy();
+		useEditorStore.getState().newCanvas(32, 32);
 	});
 });

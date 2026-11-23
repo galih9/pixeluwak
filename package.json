@@ -1,7 +1,7 @@
 {
-  "name": "vite-react-boilerplate",
+  "name": "pixeluwak",
   "author": "Ricardo Valdovinos <ricardovaldovinos1996@gmail.com>",
-  "description": "A production ready, batteries included starter template for Vite + React projects",
+  "description": "Pixeluwak — Pixel Art Studio",
   "keywords": [
     "vite",
     "react",

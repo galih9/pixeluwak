@@ -20,7 +20,7 @@ export type ThemeDefinition = {
 	id: ThemeId;
 	name: string;
 	subtitle: string;
-	group: "standard" | "studio";
+	group: "standard" | "studio" | "console";
 	scheme: "system" | "light" | "dark";
 	swatches: {
 		desk: string;
@@ -28,6 +28,7 @@ export type ThemeDefinition = {
 		panel: string;
 		elevated: string;
 		accent: string;
+		accentInk: string;
 		text: string;
 	};
 };
@@ -45,6 +46,7 @@ export const THEME_DEFINITIONS: Array<ThemeDefinition> = [
 			panel: "#f4f4f5",
 			elevated: "#e4e4e7",
 			accent: "#3b82f6",
+			accentInk: "#ffffff",
 			text: "#18181b",
 		},
 	},
@@ -60,6 +62,7 @@ export const THEME_DEFINITIONS: Array<ThemeDefinition> = [
 			panel: "#fcfaf6",
 			elevated: "#ede8de",
 			accent: "#3658d6",
+			accentInk: "#ffffff",
 			text: "#22201c",
 		},
 	},
@@ -75,13 +78,14 @@ export const THEME_DEFINITIONS: Array<ThemeDefinition> = [
 			panel: "#1b1e25",
 			elevated: "#262a34",
 			accent: "#4c82fb",
+			accentInk: "#ffffff",
 			text: "#eef1f7",
 		},
 	},
 	{
 		id: "espresso",
-		name: "Espresso Latte",
-		subtitle: "Roasted espresso warmth with steamed caramel highlights",
+		name: "Kopi Luwak",
+		subtitle: "Roasted Kopi Luwak warmth with steamed caramel highlights",
 		group: "studio",
 		scheme: "dark",
 		swatches: {
@@ -90,6 +94,7 @@ export const THEME_DEFINITIONS: Array<ThemeDefinition> = [
 			panel: "#241d18",
 			elevated: "#332922",
 			accent: "#e59348",
+			accentInk: "#1a120d",
 			text: "#f5ece3",
 		},
 	},
@@ -105,22 +110,8 @@ export const THEME_DEFINITIONS: Array<ThemeDefinition> = [
 			panel: "#f6f8f1",
 			elevated: "#e4ebd8",
 			accent: "#3b7a47",
+			accentInk: "#ffffff",
 			text: "#1f2d21",
-		},
-	},
-	{
-		id: "gameboy",
-		name: "Pocket Retro",
-		subtitle: "Nostalgic handheld olive LCD shell & pixel ink",
-		group: "studio",
-		scheme: "light",
-		swatches: {
-			desk: "#c4cba8",
-			chrome: "#cfd5b6",
-			panel: "#e7ebd6",
-			elevated: "#d7ddc0",
-			accent: "#2f5220",
-			text: "#1b2c12",
 		},
 	},
 	{
@@ -135,7 +126,56 @@ export const THEME_DEFINITIONS: Array<ThemeDefinition> = [
 			panel: "#1b1727",
 			elevated: "#28223a",
 			accent: "#e86ca8",
+			accentInk: "#1b0a14",
 			text: "#f5eefb",
+		},
+	},
+	{
+		id: "nes",
+		name: "NES Classic",
+		subtitle: "Charcoal console faceplate, crimson A/B accents & crisp 8-bit borders",
+		group: "console",
+		scheme: "dark",
+		swatches: {
+			desk: "#141518",
+			chrome: "#1c1e24",
+			panel: "#24262e",
+			elevated: "#32353f",
+			accent: "#d92320",
+			accentInk: "#ffffff",
+			text: "#f2f3f5",
+		},
+	},
+	{
+		id: "gameboy",
+		name: "Game Boy",
+		subtitle: "DMG-01 olive dot-matrix LCD screen, deep pixel ink & cartridge bezel",
+		group: "console",
+		scheme: "light",
+		swatches: {
+			desk: "#8fa65a",
+			chrome: "#a7b974",
+			panel: "#c6d594",
+			elevated: "#a8bb73",
+			accent: "#1a471a",
+			accentInk: "#d7e5a8",
+			text: "#0f2e0f",
+		},
+	},
+	{
+		id: "wii",
+		name: "Wii Home",
+		subtitle: "Glossy porcelain channels, sky-cyan glow & brushed-silver pinstripes",
+		group: "console",
+		scheme: "light",
+		swatches: {
+			desk: "#edf1f6",
+			chrome: "#e6ecf2",
+			panel: "#ffffff",
+			elevated: "#edf3f9",
+			accent: "#0078bc",
+			accentInk: "#ffffff",
+			text: "#2b3642",
 		},
 	},
 ];
