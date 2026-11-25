@@ -94,13 +94,39 @@ const MenuItem = ({
 	</button>
 );
 
+const StealthPipIcon = ({
+	className = "h-4 w-4",
+}: {
+	className?: string;
+}): FunctionComponent => (
+	<svg
+		aria-hidden="true"
+		className={className}
+		fill="none"
+		viewBox="0 0 20 20"
+	>
+		<rect
+			height="13"
+			rx="2.5"
+			stroke="currentColor"
+			strokeWidth="1.5"
+			width="16"
+			x="2"
+			y="3.5"
+		/>
+		<rect fill="currentColor" height="5.5" rx="1" width="7.5" x="9" y="9.5" />
+	</svg>
+);
+
 type TopBarProps = {
 	isCompact?: boolean;
 	isNarrow?: boolean;
 	isPortraitDock?: boolean;
 	hasStudioPanels?: boolean;
 	studioDrawerOpen?: boolean;
+	stealthActive?: boolean;
 	onToggleStudioDrawer?: () => void;
+	onToggleStealth?: () => void;
 };
 
 export const TopBar = ({
@@ -109,7 +135,9 @@ export const TopBar = ({
 	isPortraitDock = false,
 	hasStudioPanels = false,
 	studioDrawerOpen = false,
+	stealthActive = false,
 	onToggleStudioDrawer,
+	onToggleStealth,
 }: TopBarProps): FunctionComponent => {
 	const menuPopoverId = useId();
 	const filePopoverId = useId();
@@ -286,6 +314,20 @@ export const TopBar = ({
 							/>
 
 							<div className="my-1.5 h-px bg-(--pe-border-subtle)" />
+							{onToggleStealth && (
+								<MenuItem
+									icon={<StealthPipIcon className={svgClass} />}
+									label={
+										stealthActive
+											? "Exit Stealth Mode"
+											: "Stealth Mode (Mini Window)"
+									}
+									onClick={() => {
+										menuPopoverRef.current?.hidePopover();
+										onToggleStealth();
+									}}
+								/>
+							)}
 							<MenuItem
 								icon={<QuestionMarkCircleIcon className={svgClass} />}
 								label="Keyboard shortcuts…"
@@ -553,6 +595,30 @@ export const TopBar = ({
 							<span className="hidden md:inline">Panels</span>
 						</button>
 					)}
+
+				{onToggleStealth && (
+					<button
+						aria-label={stealthActive ? "Exit stealth mode" : "Stealth mode"}
+						aria-pressed={stealthActive}
+						type="button"
+						className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--pe-accent) sm:px-2.5 ${
+							stealthActive
+								? "border-(--pe-accent-ring) bg-(--pe-accent) text-(--pe-accent-ink)"
+								: "border-(--pe-border) bg-(--pe-bg-control) text-(--pe-text) hover:bg-(--pe-bg-control-hover)"
+						}`}
+						title={
+							stealthActive
+								? "Return canvas to main studio"
+								: "Stealth mode — pop out resizable mini canvas"
+						}
+						onClick={onToggleStealth}
+					>
+						<StealthPipIcon className="h-4 w-4 shrink-0" />
+						<span className={isCompact ? "hidden lg:inline" : "hidden sm:inline"}>
+							Stealth
+						</span>
+					</button>
+				)}
 
 				{!isNarrow && (
 					<IconButton

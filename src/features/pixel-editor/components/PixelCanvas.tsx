@@ -440,8 +440,18 @@ function paintBufferToCanvas(
 	);
 }
 
-export const PixelCanvas = (): FunctionComponent => {
+type PixelCanvasProps = {
+	fitOnMount?: boolean;
+};
+
+export const PixelCanvas = ({
+	fitOnMount = false,
+}: PixelCanvasProps = {}): FunctionComponent => {
 	const containerRef = useRef<HTMLDivElement>(null);
+	const fitOnMountRef = useRef(fitOnMount);
+	useEffect(() => {
+		fitOnMountRef.current = fitOnMount;
+	}, [fitOnMount]);
 	const stageRef = useRef<Konva.Stage>(null);
 	const imageLayerRef = useRef<Konva.Layer>(null);
 	const overlayLayerRef = useRef<Konva.Layer>(null);
@@ -631,12 +641,19 @@ export const PixelCanvas = (): FunctionComponent => {
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container) return;
-		const observer = new ResizeObserver(([entry]) => {
+		const ownerWindow = container.ownerDocument.defaultView ?? window;
+		const ResizeObserverClass = ownerWindow.ResizeObserver ?? ResizeObserver;
+		let fittedOnMount = false;
+		const observer = new ResizeObserverClass(([entry]) => {
 			if (!entry) return;
 			const w = Math.floor(entry.contentRect.width);
 			const h = Math.floor(entry.contentRect.height);
 			setStageSize({ width: w, height: h });
 			getState().setViewport(w, h);
+			if (fitOnMountRef.current && !fittedOnMount && w > 0 && h > 0) {
+				fittedOnMount = true;
+				getState().fitView();
+			}
 		});
 		observer.observe(container);
 		return (): void => {
@@ -670,9 +687,15 @@ export const PixelCanvas = (): FunctionComponent => {
 	/* ------------------------------ keyboard ------------------------------ */
 
 	useEffect(() => {
-		const isTyping = (event: KeyboardEvent): boolean =>
-			event.target instanceof HTMLElement &&
-			(event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA");
+		const ownerWindow = containerRef.current?.ownerDocument.defaultView ?? window;
+		const isTyping = (event: KeyboardEvent): boolean => {
+			const target = event.target;
+			if (!target || typeof target !== "object" || !("tagName" in target)) {
+				return false;
+			}
+			const tagName = String((target as { tagName: unknown }).tagName).toUpperCase();
+			return tagName === "INPUT" || tagName === "TEXTAREA";
+		};
 		const onKeyDown = (event: KeyboardEvent): void => {
 			if (event.code === "Space" && !isTyping(event)) {
 				event.preventDefault();
@@ -685,13 +708,13 @@ export const PixelCanvas = (): FunctionComponent => {
 		const onBlur = (): void => {
 			setSpaceHeld(false);
 		};
-		window.addEventListener("keydown", onKeyDown);
-		window.addEventListener("keyup", onKeyUp);
-		window.addEventListener("blur", onBlur);
+		ownerWindow.addEventListener("keydown", onKeyDown);
+		ownerWindow.addEventListener("keyup", onKeyUp);
+		ownerWindow.addEventListener("blur", onBlur);
 		return (): void => {
-			window.removeEventListener("keydown", onKeyDown);
-			window.removeEventListener("keyup", onKeyUp);
-			window.removeEventListener("blur", onBlur);
+			ownerWindow.removeEventListener("keydown", onKeyDown);
+			ownerWindow.removeEventListener("keyup", onKeyUp);
+			ownerWindow.removeEventListener("blur", onBlur);
 		};
 	}, []);
 
@@ -705,6 +728,7 @@ export const PixelCanvas = (): FunctionComponent => {
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container) return;
+		const ownerWindow = container.ownerDocument.defaultView ?? window;
 		let interaction: Interaction | null = null;
 		let lastPaintPoint: Point | null = null;
 		let wheelAccumulator = 0;
@@ -724,7 +748,7 @@ export const PixelCanvas = (): FunctionComponent => {
 			interaction = null;
 			if (current) {
 				if (current.kind === "spray") {
-					window.clearInterval(current.timerId);
+					ownerWindow.clearInterval(current.timerId);
 				}
 				setPreview(null);
 				const state = getState();
@@ -1083,7 +1107,7 @@ export const PixelCanvas = (): FunctionComponent => {
 						options: sprayOptions,
 						timerId: 0,
 					};
-					sprayInteraction.timerId = window.setInterval(() => {
+					sprayInteraction.timerId = ownerWindow.setInterval(() => {
 						stampSpray(
 							sprayInteraction.target,
 							sprayInteraction.current.x,
@@ -1735,7 +1759,7 @@ export const PixelCanvas = (): FunctionComponent => {
 					break;
 				}
 				case "spray": {
-					window.clearInterval(current.timerId);
+					ownerWindow.clearInterval(current.timerId);
 					state.commitPixels(current.target.data);
 					break;
 				}
@@ -1828,7 +1852,7 @@ export const PixelCanvas = (): FunctionComponent => {
 		container.addEventListener("contextmenu", onContextMenu);
 		return (): void => {
 			if (interaction?.kind === "spray") {
-				window.clearInterval(interaction.timerId);
+				ownerWindow.clearInterval(interaction.timerId);
 			}
 			container.removeEventListener("pointerdown", onPointerDown);
 			container.removeEventListener("pointermove", onPointerMove);

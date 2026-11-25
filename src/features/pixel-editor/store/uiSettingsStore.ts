@@ -289,9 +289,11 @@ export function themeColorScheme(theme: ThemeId): "light dark" | "light" | "dark
 	return found.scheme;
 }
 
-export function applyThemeToDocument(theme: ThemeId): void {
-	if (typeof document === "undefined") return;
-	const root = document.documentElement;
+export function applyThemeToTargetDocument(
+	targetDocument: Document,
+	theme: ThemeId
+): void {
+	const root = targetDocument.documentElement;
 	if (theme === "system") {
 		root.removeAttribute("data-theme");
 	} else {
@@ -299,16 +301,24 @@ export function applyThemeToDocument(theme: ThemeId): void {
 	}
 
 	const scheme = themeColorScheme(theme);
-	let meta = document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]');
-	if (!meta && document.head) {
-		meta = document.createElement("meta");
+	let meta = targetDocument.querySelector<HTMLMetaElement>(
+		'meta[name="color-scheme"]'
+	);
+	if (!meta && targetDocument.head) {
+		meta = targetDocument.createElement("meta");
 		meta.name = "color-scheme";
-		document.head.append(meta);
+		targetDocument.head.append(meta);
 	}
 	if (meta) {
 		meta.content = scheme;
 	}
+}
 
+export function applyThemeToDocument(theme: ThemeId): void {
+	if (typeof document === "undefined") return;
+	applyThemeToTargetDocument(document, theme);
+
+	const scheme = themeColorScheme(theme);
 	try {
 		if (theme === "system") {
 			window.localStorage.removeItem(COLOR_SCHEME_FOUC_STORAGE_KEY);

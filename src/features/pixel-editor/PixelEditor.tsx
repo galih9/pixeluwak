@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import type { FunctionComponent } from "../../common/types";
 import { CanvasHud } from "./components/CanvasHud";
 import { ColorPickerPanel } from "./components/ColorPanel";
@@ -10,6 +11,10 @@ import { PortraitBottomBar } from "./components/PortraitBottomBar";
 import { PreviewPanel } from "./components/PreviewPanel";
 import { StatusBar } from "./components/StatusBar";
 import {
+	StealthActivePlaceholder,
+	StealthWindowView,
+} from "./components/StealthWindowView";
+import {
 	type StudioDrawerTab,
 	StudioPanelsDrawer,
 } from "./components/StudioPanelsDrawer";
@@ -20,6 +25,7 @@ import { ToolOptions } from "./components/ToolOptions";
 import { TopBar } from "./components/TopBar";
 import { usePixelEditorApi } from "./hooks/usePixelEditorApi";
 import { useShortcuts } from "./hooks/useShortcuts";
+import { useStealthWindow } from "./hooks/useStealthWindow";
 import {
 	COMPACT_MEDIA_QUERY,
 	useViewportLayout,
@@ -36,17 +42,24 @@ import {
 import "./pixel-editor.css";
 
 export const PixelEditor = (): FunctionComponent => {
-	useShortcuts();
 	usePixelEditorApi();
 
 	const theme = useUiSettingsStore((state) => state.theme);
 	const panels = useUiSettingsStore((state) => state.panels);
 	const showToolbar = useUiSettingsStore((state) => state.showToolbar);
+	const projectName = useEditorStore((state) => state.name);
+
+	const stealth = useStealthWindow({
+		theme,
+		title: projectName.trim() ? `${projectName.trim()} — Mini` : "Mini Canvas",
+	});
+	useShortcuts(stealth.stealthWindow);
 
 	const { isCompact, isPortraitDock, isNarrow } = useViewportLayout();
 	const [drawerOpen, setDrawerOpen] = useState(false);
 	const [drawerTab, setDrawerTab] = useState<StudioDrawerTab>("color");
 	const [compactTimelineOpen, setCompactTimelineOpen] = useState(false);
+	const [fitOnReturn, setFitOnReturn] = useState(false);
 
 	useEffect(() => startAutosave(), []);
 
@@ -146,6 +159,22 @@ export const PixelEditor = (): FunctionComponent => {
 		}
 	};
 
+	const handleToggleStealth = (): void => {
+		if (stealth.isActive) {
+			stealth.closeStealth();
+			return;
+		}
+		void stealth.openStealth().then((opened) => {
+			if (opened) {
+				setFitOnReturn(true);
+			} else {
+				useEditorStore
+					.getState()
+					.showNotice("Pop-up blocked · allow pop-ups to use Stealth Mode");
+			}
+		});
+	};
+
 	return (
 		<div className="pixel-editor-root flex h-dvh w-full select-none flex-col overflow-hidden bg-(--pe-bg-desk) text-(--pe-text)">
 			<TopBar
@@ -153,15 +182,27 @@ export const PixelEditor = (): FunctionComponent => {
 				isCompact={isCompact}
 				isNarrow={isNarrow}
 				isPortraitDock={isPortraitDock}
+				stealthActive={stealth.isActive}
 				studioDrawerOpen={effectiveDrawerOpen}
+				onToggleStealth={handleToggleStealth}
 				onToggleStudioDrawer={toggleStudioDrawer}
 			/>
 			{panels.toolOptions && <ToolOptions />}
 			<div className="flex min-h-0 flex-1">
 				{showToolbar && !isPortraitDock && <Toolbar />}
 				<main className="canvas-backdrop relative min-w-0 flex-1">
-					<PixelCanvas />
-					{isCompact && <CanvasHud showStatusInfo={panels.statusBar} />}
+					{stealth.isActive ? (
+						<StealthActivePlaceholder
+							mode={stealth.mode}
+							onClose={stealth.closeStealth}
+							onFocus={stealth.focusStealth}
+						/>
+					) : (
+						<>
+							<PixelCanvas fitOnMount={fitOnReturn} />
+							{isCompact && <CanvasHud showStatusInfo={panels.statusBar} />}
+						</>
+					)}
 				</main>
 				{hasRightSidebar && (
 					<aside className="pe-studio-panel-container editor-scrollbar w-69 shrink-0 space-y-2.5 overflow-y-auto border-l border-(--pe-border) bg-(--pe-bg-chrome) p-2.5">
@@ -222,6 +263,12 @@ export const PixelEditor = (): FunctionComponent => {
 				/>
 			)}
 			<Dialogs />
+			{stealth.isActive &&
+				stealth.container &&
+				createPortal(
+					<StealthWindowView onClose={stealth.closeStealth} />,
+					stealth.container
+				)}
 		</div>
 	);
 };

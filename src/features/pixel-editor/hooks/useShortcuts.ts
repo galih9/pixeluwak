@@ -7,30 +7,48 @@ const TOOL_KEYS = new Map(
 	TOOLS.map((info) => [info.shortcut.toLowerCase(), info.id])
 );
 
-export function useShortcuts(): void {
+function isEditableTarget(target: EventTarget | null): boolean {
+	if (!target || typeof target !== "object" || !("tagName" in target)) {
+		return false;
+	}
+	const rawTagName = (target as { tagName: unknown }).tagName;
+	if (typeof rawTagName !== "string") {
+		return false;
+	}
+	const tagName = rawTagName.toUpperCase();
+	if (tagName === "INPUT") {
+		const rawType = (target as { type?: unknown }).type;
+		const inputType = typeof rawType === "string" ? rawType.toLowerCase() : "";
+		const passThrough =
+			inputType === "checkbox" ||
+			inputType === "radio" ||
+			inputType === "color";
+		return !passThrough;
+	}
+	return tagName === "TEXTAREA" || tagName === "SELECT";
+}
+
+export function useShortcuts(extraWindow?: Window | null): void {
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent): void => {
-			const target = event.target;
 			// Checkboxes and color swatches keep focus after a click; shortcuts
 			// should still work there. Text fields, sliders and selects own keys.
-			const passThrough =
-				target instanceof HTMLInputElement &&
-				(target.type === "checkbox" ||
-					target.type === "radio" ||
-					target.type === "color");
-			if (
-				!passThrough &&
-				target instanceof HTMLElement &&
-				(target.tagName === "INPUT" ||
-					target.tagName === "TEXTAREA" ||
-					target.tagName === "SELECT")
-			) {
+			if (isEditableTarget(event.target)) {
 				return;
 			}
 			const state = useEditorStore.getState();
 			if (state.dialog) return;
 			const key = event.key.toLowerCase();
 			const command = event.ctrlKey || event.metaKey;
+			const fromExtraWindow =
+				extraWindow !== null &&
+				extraWindow !== undefined &&
+				event.currentTarget === extraWindow;
+			const focusMainForDialog = (): void => {
+				if (fromExtraWindow) {
+					window.focus();
+				}
+			};
 
 			if (command) {
 				let handled = true;
@@ -45,10 +63,16 @@ export function useShortcuts(): void {
 				else if (key === "v") state.paste();
 				else if (key === "s") saveProject();
 				else if (key === "o") void openFile();
-				else if (key === "e" && event.shiftKey) state.openDialog("spritesheet");
-				else if (key === "e") state.openDialog("export");
-				else if (key === ",") state.openDialog("settings");
-				else handled = false;
+				else if (key === "e" && event.shiftKey) {
+					focusMainForDialog();
+					state.openDialog("spritesheet");
+				} else if (key === "e") {
+					focusMainForDialog();
+					state.openDialog("export");
+				} else if (key === ",") {
+					focusMainForDialog();
+					state.openDialog("settings");
+				} else handled = false;
 				if (handled) event.preventDefault();
 				return;
 			}
@@ -160,6 +184,7 @@ export function useShortcuts(): void {
 					return;
 				}
 				case "?": {
+					focusMainForDialog();
 					state.openDialog("help");
 					return;
 				}
@@ -170,14 +195,17 @@ export function useShortcuts(): void {
 				return;
 			}
 			if (event.shiftKey && key === "o") {
+				focusMainForDialog();
 				state.openDialog("outline");
 				return;
 			}
 			if (event.shiftKey && key === "r") {
+				focusMainForDialog();
 				state.openDialog("resize");
 				return;
 			}
 			if (event.shiftKey && key === "t") {
+				focusMainForDialog();
 				state.openDialog("tilemap");
 				return;
 			}
@@ -193,8 +221,14 @@ export function useShortcuts(): void {
 			if (tool) state.setTool(tool);
 		};
 		window.addEventListener("keydown", onKeyDown);
+		if (extraWindow && extraWindow !== window) {
+			extraWindow.addEventListener("keydown", onKeyDown);
+		}
 		return (): void => {
 			window.removeEventListener("keydown", onKeyDown);
+			if (extraWindow && extraWindow !== window) {
+				extraWindow.removeEventListener("keydown", onKeyDown);
+			}
 		};
-	}, []);
+	}, [extraWindow]);
 }
